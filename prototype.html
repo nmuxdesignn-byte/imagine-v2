@@ -420,9 +420,7 @@ html,body{
   animation:none;
   transform:translateY(0);
 }
-/* D1 expanded pill: drops below header */
-.d1-status:has(.s-expanded),
-.d1-status:has(.s-expanded-multi){top:68px}
+/* D1 expanded pill top position is GSAP-controlled — see morphD1() */
 
 .status-pill{
   background:white;
@@ -435,7 +433,6 @@ html,body{
 /* Loading pill — while generating */
 .status-pill.s-loading{
   border-radius:12px;
-  width:239px;height:48px;
   padding:0 12px;gap:8px;
   align-items:center;
 }
@@ -443,7 +440,6 @@ html,body{
 /* After gen — single image */
 .status-pill.s-expanded{
   border-radius:12px;
-  width:238px;height:144px;
   padding:0;cursor:pointer;
   flex-direction:column;align-items:stretch;
 }
@@ -451,7 +447,6 @@ html,body{
 /* After gen — multiple images */
 .status-pill.s-expanded-multi{
   border-radius:12px;
-  width:376px;height:144px;
   padding:0;cursor:pointer;
   flex-direction:column;align-items:stretch;
 }
@@ -459,7 +454,6 @@ html,body{
 /* Post gen — condensed pill */
 .status-pill.s-condensed{
   border-radius:12px;
-  width:264px;height:50px;
   padding:0 12px 0 14px;gap:8px;cursor:pointer;
 }
 
@@ -1106,6 +1100,14 @@ const PHOTOS = [
   './photos/photo-6.jpg',
 ];
 
+// Pill dimensions for each D1 state — GSAP owns width/height/top
+const PILL_DIMS = {
+  loading:       { w: 239, h: 48,  top: 12 },
+  expanded:      { w: 238, h: 144, top: 68 },
+  expandedMulti: { w: 376, h: 144, top: 68 },
+  condensed:     { w: 264, h: 50,  top: 12 },
+};
+
 const GALLERY_PROMPTS = [
   'standing in front of the Eiffel Tower in a black leather jacket',
   'as a CEO in a glass office at golden hour',
@@ -1347,26 +1349,56 @@ function handleCreate(e) {
 }
 
 // ─── D1 logic ─────────────────────────────────────────────────────────
+
+// Dynamic Island-style morph: spring-animate shape + position, cross-fade content
+function morphD1(key, buildFn) {
+  const dims = PILL_DIMS[key];
+
+  // 1. Spring-morph pill shape
+  gsap.to(statusPill, {
+    width: dims.w, height: dims.h,
+    duration: 0.52,
+    ease: 'back.out(1.85)',
+    overwrite: true,
+  });
+  // 2. Spring-slide position
+  gsap.to(d1Status, {
+    top: dims.top,
+    duration: 0.48,
+    ease: 'back.out(1.4)',
+    overwrite: true,
+  });
+  // 3. Swap content at ~25% into the morph (pill has begun moving, content swaps mid-flight)
+  gsap.delayedCall(0.13, buildFn);
+}
+
 function startD1Loading() {
   S.d1State = 'loading';
-  d1Status.classList.add('visible');
-  statusPill.className = 'status-pill s-loading';
-  statusPill.innerHTML = `
-    <div class="sl-thumb"></div>
-    <span class="sl-text">Imagining your photo...</span>
-    <div class="sl-spin"></div>
-  `;
+  const buildFn = () => {
+    statusPill.className = 'status-pill s-loading';
+    statusPill.innerHTML = `
+      <div class="sl-thumb"></div>
+      <span class="sl-text">Imagining your photo...</span>
+      <div class="sl-spin"></div>
+    `;
+  };
+
+  if (!d1Status.classList.contains('visible')) {
+    // First appearance — set pill size then slide in from top (CSS keyframe)
+    gsap.set(d1Status, { top: 12 });
+    gsap.set(statusPill, { width: 239, height: 48 });
+    buildFn();
+    d1Status.classList.add('visible');
+  } else {
+    // Returning from condensed/expanded — morph to loading
+    morphD1('loading', buildFn);
+  }
 }
 
 function finishD1Gen() {
   clearTimeout(S.d1CollapseTimer);
-  // Fade out so the top-position jump (12px→68px) is invisible
-  d1Status.classList.remove('visible');
-  setTimeout(() => {
-    if (S.genImages.length > 1) showD1ExpandedMulti();
-    else showD1ExpandedSingle();
-    d1Status.classList.add('visible');
-  }, 260);
+  if (S.genImages.length > 1) morphD1('expandedMulti', showD1ExpandedMulti);
+  else morphD1('expanded', showD1ExpandedSingle);
 }
 
 function showD1ExpandedSingle() {
@@ -1422,11 +1454,9 @@ function showD1Condensed() {
   if (S.d1State === 'condensed') return;
   S.d1State = 'condensed';
   clearTimeout(S.d1CollapseTimer);
-  // Fade out so the top-position jump (68px→12px) is invisible
-  d1Status.classList.remove('visible');
-  setTimeout(() => {
-    const multi = S.genImages.length > 1;
-    const img = S.genImages[S.genImages.length - 1];
+  const multi = S.genImages.length > 1;
+  const img = S.genImages[S.genImages.length - 1];
+  morphD1('condensed', () => {
     const thumbHtml = multi ? `
       <div class="sc-thumb-stack">
         <img class="sc-thumb-back" src="${S.genImages[0].src}" onerror="this.style.background='#cdcdce';this.removeAttribute('src')"/>
@@ -1442,8 +1472,7 @@ function showD1Condensed() {
       </svg>
     `;
     statusPill.onclick = openSheet;
-    d1Status.classList.add('visible');
-  }, 260);
+  });
 }
 
 function dismissD1(e) {
@@ -1455,13 +1484,14 @@ function dismissD1(e) {
 function startD2Loading() {
   S.d1State = 'loading';
   d1Status.classList.remove('d2-full');
-  d1Status.classList.add('visible');
+  gsap.set(statusPill, { width: 239, height: 48, clearProps: 'opacity' });
   statusPill.className = 'status-pill s-loading';
   statusPill.innerHTML = `
     <div class="sl-thumb"></div>
     <span class="sl-text">Imagining your photo...</span>
     <div class="sl-spin"></div>
   `;
+  d1Status.classList.add('visible');
 }
 
 function finishD2Gen() {
@@ -1533,6 +1563,7 @@ function showD2Condensed() {
       <span class="sc-label">Your imagine look is ready</span>
       <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M6 4l4 4-4 4" stroke="#67707c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
     `;
+    gsap.set(statusPill, { width: 264, height: 50, clearProps: 'opacity' });
     statusPill.onclick = openSheet;
     d1Status.classList.add('visible');
   }, 440);
@@ -1550,13 +1581,14 @@ function dismissD2(e) {
 // ─── D3 logic ─────────────────────────────────────────────────────────
 function startD3Loading() {
   S.d1State = 'loading';
-  d1Status.classList.add('visible');
+  gsap.set(statusPill, { width: 239, height: 48, clearProps: 'opacity' });
   statusPill.className = 'status-pill s-loading';
   statusPill.innerHTML = `
     <div class="sl-thumb"></div>
     <span class="sl-text">Imagining your photo...</span>
     <div class="sl-spin"></div>
   `;
+  d1Status.classList.add('visible');
 }
 
 function finishD3Gen() {
@@ -1636,6 +1668,7 @@ function setupScroll() {
         `;
         statusPill.onclick = openSheet;
         S.d1State = 'condensed';
+        gsap.set(statusPill, { width: 264, height: 50, clearProps: 'opacity' });
         d1Status.classList.add('visible');
       } else if (!shouldBeCompact && S.d3Compact) {
         S.d3Compact = false;
@@ -1753,7 +1786,10 @@ function setDir(dir) {
   S.genQueue = 0;
   S.sheetOpen = false;
 
-  // Reset UI
+  // Reset UI — kill any in-flight GSAP morphs first
+  gsap.killTweensOf([d1Status, statusPill]);
+  gsap.set(d1Status, { clearProps: 'top' });
+  gsap.set(statusPill, { clearProps: 'width,height,opacity' });
   d1Status.classList.remove('visible', 'd2-full');
   statusPill.innerHTML = '';
   d2Banner.classList.remove('visible');
