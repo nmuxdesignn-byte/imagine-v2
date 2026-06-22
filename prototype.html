@@ -660,37 +660,46 @@ html,body{
 .sheet-card{
   border-radius:8px;overflow:hidden;
   background:#f7f7f8;
-  border:1px solid rgba(241,241,241,1);
   flex-shrink:0;
 }
 .sheet-card-img{
   width:100%;
   aspect-ratio:342/382;
-  overflow:hidden;
-  background:#e5e6e6;
+  overflow:hidden;background:#e5e6e6;
+  border:1px solid rgba(241,241,241,1);
+  border-bottom:none;
+  border-radius:8px 8px 0 0;
 }
 .sheet-card-img img{
   width:100%;height:100%;object-fit:cover;display:block;
 }
-.sheet-card-foot{
-  padding:14px 16px 16px;
-  display:flex;flex-direction:column;gap:10px;
+/* Prompt + Use bar (42px, matches Figma prompt FRAME) */
+.sheet-card-bar{
+  display:flex;align-items:center;
+  height:42px;
+  padding:0 12px 0 8px;
+  background:#f7f7f8;
+  border:1px solid rgba(224,225,225,1);
+  border-top:1px solid rgba(224,225,225,1);
+  border-radius:0 0 8px 8px;
+  gap:8px;
 }
 .sheet-card-prompt{
-  font-size:14px;font-weight:420;line-height:1.4;color:#67707c;
+  flex:1;min-width:0;
+  font-size:14px;font-weight:420;line-height:16px;color:#67707c;
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
-  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;
-  overflow:hidden;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
 }
 .sheet-card-use{
-  width:100%;height:46px;
-  background:#000409;border:none;border-radius:8px;
-  display:flex;align-items:center;justify-content:center;gap:8px;
-  cursor:pointer;-webkit-tap-highlight-color:transparent;
   font-family:"Greed",sans-serif;
-  font-size:15px;font-weight:450;color:white;
+  font-size:14px;font-weight:450;color:#000409;
+  background:none;border:none;padding:0;
+  cursor:pointer;-webkit-tap-highlight-color:transparent;
+  white-space:nowrap;flex-shrink:0;
+  text-decoration:underline;
+  text-decoration-thickness:1px;
+  text-underline-offset:2px;
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
-  flex-shrink:0;
 }
 
 /* ─── Direction switcher ─────────────────────────────────────── */
@@ -1646,14 +1655,9 @@ function buildSheetGrid() {
       <div class="sheet-card-img">
         <img src="${item.src}" loading="lazy" draggable="false"/>
       </div>
-      <div class="sheet-card-foot">
-        <p class="sheet-card-prompt">"${item.prompt}"</p>
-        <button class="sheet-card-use">
-          Use this look
-          <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-            <path d="M3 8h10M9 4l4 4-4 4" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-          </svg>
-        </button>
+      <div class="sheet-card-bar">
+        <span class="sheet-card-prompt">${item.prompt}</span>
+        <button class="sheet-card-use">Use</button>
       </div>
     `;
     sheetGrid.appendChild(d);
