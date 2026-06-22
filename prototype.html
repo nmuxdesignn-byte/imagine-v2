@@ -1419,12 +1419,7 @@ function showD1Condensed() {
 
 function dismissD1(e) {
   e.stopPropagation();
-  S.d1State = 'hidden';
-  clearTimeout(S.d1CollapseTimer);
-  d1Status.classList.remove('visible');
-  setTimeout(() => {
-    statusPill.innerHTML = '';
-  }, 300);
+  showD1Condensed();
 }
 
 // ─── D2 logic ─────────────────────────────────────────────────────────
