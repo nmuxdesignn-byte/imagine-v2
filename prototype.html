@@ -399,61 +399,50 @@ html,body{
 }
 
 /* ─── D1 Status bar ──────────────────────────────────────────── */
-@keyframes pillSlideIn {
-  from { transform:translateX(-50%) translateY(-20px) scale(0.92); opacity:0; }
-  to   { transform:translateX(-50%) translateY(0)     scale(1);    opacity:1; }
-}
+/* Width fixed at max pill size so translateX(-50%) never shifts during morph */
 .d1-status{
   position:absolute;
-  top:12px;left:50%;          /* loading + condensed: inside header */
+  top:12px;left:50%;
+  width:376px;
   transform:translateX(-50%);
+  display:flex;justify-content:center;align-items:flex-start;
   z-index:100;
   pointer-events:none;opacity:0;
-  transition:opacity .2s ease; /* exit fade only */
+  /* exit fade — entrance is GSAP-controlled */
 }
-.d1-status.visible{
-  pointer-events:auto;opacity:1;
-  animation:pillSlideIn 0.4s cubic-bezier(0.34,1.2,0.64,1) both;
-}
-/* D2 banner has its own transform-slide — don't override with the keyframe */
-.d1-status.d2-full.visible{
-  animation:none;
-  transform:translateY(0);
-}
-/* D1 expanded pill top position is GSAP-controlled — see morphD1() */
+.d1-status.visible{pointer-events:auto}
 
 .status-pill{
   background:white;
   border:1px solid var(--stroke);
   box-shadow:var(--shadow-sm);
+  border-radius:12px;
   overflow:hidden;
   display:flex;align-items:center;
+  will-change:width,height; /* hint compositor */
+  flex-shrink:0;
 }
 
 /* Loading pill — while generating */
 .status-pill.s-loading{
-  border-radius:12px;
   padding:0 12px;gap:8px;
   align-items:center;
 }
 
 /* After gen — single image */
 .status-pill.s-expanded{
-  border-radius:12px;
   padding:0;cursor:pointer;
   flex-direction:column;align-items:stretch;
 }
 
 /* After gen — multiple images */
 .status-pill.s-expanded-multi{
-  border-radius:12px;
   padding:0;cursor:pointer;
   flex-direction:column;align-items:stretch;
 }
 
 /* Post gen — condensed pill */
 .status-pill.s-condensed{
-  border-radius:12px;
   padding:0 12px 0 14px;gap:8px;cursor:pointer;
 }
 
@@ -1100,12 +1089,13 @@ const PHOTOS = [
   './photos/photo-6.jpg',
 ];
 
-// Pill dimensions for each D1 state — GSAP owns width/height/top
+// Pill dimensions for each D1 state — GSAP owns width/height/y
+// y is translateY offset from CSS top:12px (so expanded = 12+56 = 68px visual)
 const PILL_DIMS = {
-  loading:       { w: 239, h: 48,  top: 12 },
-  expanded:      { w: 238, h: 144, top: 68 },
-  expandedMulti: { w: 376, h: 144, top: 68 },
-  condensed:     { w: 264, h: 50,  top: 12 },
+  loading:       { w: 239, h: 48,  y: 0  },
+  expanded:      { w: 238, h: 144, y: 56 },
+  expandedMulti: { w: 376, h: 144, y: 56 },
+  condensed:     { w: 264, h: 50,  y: 0  },
 };
 
 const GALLERY_PROMPTS = [
@@ -1350,26 +1340,27 @@ function handleCreate(e) {
 
 // ─── D1 logic ─────────────────────────────────────────────────────────
 
-// Dynamic Island-style morph: spring-animate shape + position, cross-fade content
+// Dynamic Island-style morph: GPU translateY for position, power4.out for smoothness
 function morphD1(key, buildFn) {
   const dims = PILL_DIMS[key];
 
-  // 1. Spring-morph pill shape
+  // Content swap fires first — pill has barely moved so the snap is invisible
+  buildFn();
+
+  // GPU-composited position via translateY (no layout reflow)
+  gsap.to(d1Status, {
+    y: dims.y,
+    duration: 0.5,
+    ease: 'power4.out',
+    overwrite: true,
+  });
+  // Width/height morph — smooth deceleration, no overshoot jitter
   gsap.to(statusPill, {
     width: dims.w, height: dims.h,
-    duration: 0.52,
-    ease: 'back.out(1.85)',
+    duration: 0.5,
+    ease: 'power4.out',
     overwrite: true,
   });
-  // 2. Spring-slide position
-  gsap.to(d1Status, {
-    top: dims.top,
-    duration: 0.48,
-    ease: 'back.out(1.4)',
-    overwrite: true,
-  });
-  // 3. Swap content at ~25% into the morph (pill has begun moving, content swaps mid-flight)
-  gsap.delayedCall(0.13, buildFn);
 }
 
 function startD1Loading() {
@@ -1384,11 +1375,12 @@ function startD1Loading() {
   };
 
   if (!d1Status.classList.contains('visible')) {
-    // First appearance — set pill size then slide in from top (CSS keyframe)
-    gsap.set(d1Status, { top: 12 });
+    // First appearance — slide in from top with GSAP
+    gsap.set(d1Status, { y: -28, opacity: 0 });
     gsap.set(statusPill, { width: 239, height: 48 });
     buildFn();
-    d1Status.classList.add('visible');
+    d1Status.classList.add('visible'); // pointer-events: auto
+    gsap.to(d1Status, { y: 0, opacity: 1, duration: 0.45, ease: 'power4.out' });
   } else {
     // Returning from condensed/expanded — morph to loading
     morphD1('loading', buildFn);
@@ -1592,8 +1584,10 @@ function startD3Loading() {
 }
 
 function finishD3Gen() {
-  // Hide loading pill
-  d1Status.classList.remove('visible');
+  gsap.to(d1Status, { opacity: 0, duration: 0.2, onComplete: () => {
+    d1Status.classList.remove('visible');
+    gsap.set(d1Status, { clearProps: 'opacity' });
+  }});
   S.d1State = 'hidden';
   S.d3BannerVisible = true;
   S.d3Compact = false;
@@ -1672,7 +1666,10 @@ function setupScroll() {
         d1Status.classList.add('visible');
       } else if (!shouldBeCompact && S.d3Compact) {
         S.d3Compact = false;
-        d1Status.classList.remove('visible');
+        gsap.to(d1Status, { opacity: 0, duration: 0.18, onComplete: () => {
+          d1Status.classList.remove('visible');
+          gsap.set(d1Status, { clearProps: 'opacity,transform' });
+        }});
         S.d1State = 'hidden';
         d3Card.classList.add('visible');
       }
@@ -1788,7 +1785,7 @@ function setDir(dir) {
 
   // Reset UI — kill any in-flight GSAP morphs first
   gsap.killTweensOf([d1Status, statusPill]);
-  gsap.set(d1Status, { clearProps: 'top' });
+  gsap.set(d1Status, { clearProps: 'transform,opacity' });
   gsap.set(statusPill, { clearProps: 'width,height,opacity' });
   d1Status.classList.remove('visible', 'd2-full');
   statusPill.innerHTML = '';
