@@ -392,13 +392,16 @@ html,body{
 /* ─── D1 Status bar ──────────────────────────────────────────── */
 .d1-status{
   position:absolute;
-  top:68px;left:50%;
+  top:12px;left:50%;          /* loading + condensed: inside header */
   transform:translateX(-50%);
   z-index:100;
   pointer-events:none;opacity:0;
   transition:opacity .25s ease;
 }
 .d1-status.visible{pointer-events:auto;opacity:1}
+/* D1 expanded pill: drops below header */
+.d1-status:has(.s-expanded),
+.d1-status:has(.s-expanded-multi){top:68px}
 
 .status-pill{
   background:white;
@@ -1335,15 +1338,16 @@ function startD1Loading() {
 
 function finishD1Gen() {
   clearTimeout(S.d1CollapseTimer);
-  const multi = S.genImages.length > 1;
-  if (multi) {
-    showD1ExpandedMulti();
-  } else {
-    showD1ExpandedSingle();
-  }
-  S.d1CollapseTimer = setTimeout(() => {
-    if (S.d1State === 'expanded') showD1Condensed();
-  }, 5000);
+  // Fade out so the top-position jump (12px→68px) is invisible
+  d1Status.classList.remove('visible');
+  setTimeout(() => {
+    if (S.genImages.length > 1) showD1ExpandedMulti();
+    else showD1ExpandedSingle();
+    d1Status.classList.add('visible');
+    S.d1CollapseTimer = setTimeout(() => {
+      if (S.d1State === 'expanded') showD1Condensed();
+    }, 5000);
+  }, 260);
 }
 
 function showD1ExpandedSingle() {
@@ -1396,25 +1400,31 @@ function showD1ExpandedMulti() {
 }
 
 function showD1Condensed() {
+  if (S.d1State === 'condensed') return;
   S.d1State = 'condensed';
   clearTimeout(S.d1CollapseTimer);
-  const multi = S.genImages.length > 1;
-  const img = S.genImages[S.genImages.length - 1];
-  const thumbHtml = multi ? `
-    <div class="sc-thumb-stack">
-      <img class="sc-thumb-back" src="${S.genImages[0].src}" onerror="this.style.background='#cdcdce';this.removeAttribute('src')"/>
-      <img class="sc-thumb-front" src="${img.src}" onerror="this.style.background='#e5e6e6';this.removeAttribute('src')"/>
-    </div>
-  ` : `<img class="sc-thumb" src="${img.src}" onerror="this.style.background='#e5e6e6';this.removeAttribute('src')"/>`;
-
-  statusPill.className = 'status-pill s-condensed';
-  statusPill.innerHTML = `
-    ${thumbHtml}
-    <span class="sc-label">Your imagine look is ready</span>
-    <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-      <path d="M6 4l4 4-4 4" stroke="#67707c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
-    </svg>
-  `;
+  // Fade out so the top-position jump (68px→12px) is invisible
+  d1Status.classList.remove('visible');
+  setTimeout(() => {
+    const multi = S.genImages.length > 1;
+    const img = S.genImages[S.genImages.length - 1];
+    const thumbHtml = multi ? `
+      <div class="sc-thumb-stack">
+        <img class="sc-thumb-back" src="${S.genImages[0].src}" onerror="this.style.background='#cdcdce';this.removeAttribute('src')"/>
+        <img class="sc-thumb-front" src="${img.src}" onerror="this.style.background='#e5e6e6';this.removeAttribute('src')"/>
+      </div>
+    ` : `<img class="sc-thumb" src="${img.src}" onerror="this.style.background='#e5e6e6';this.removeAttribute('src')"/>`;
+    statusPill.className = 'status-pill s-condensed';
+    statusPill.innerHTML = `
+      ${thumbHtml}
+      <span class="sc-label">Your imagine look is ready</span>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M6 4l4 4-4 4" stroke="#67707c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    `;
+    statusPill.onclick = openSheet;
+    d1Status.classList.add('visible');
+  }, 260);
 }
 
 function dismissD1(e) {
