@@ -83,15 +83,8 @@ html,body{
 /* ─── Background screen content ─────────────────────────────── */
 .bg-screen{
   position:absolute;inset:0;
-  padding:68px 24px 0;
+  display:flex;align-items:center;justify-content:center;
 }
-.bg-grid{
-  display:grid;grid-template-columns:repeat(2,1fr);gap:10px;
-}
-.bg-card{
-  aspect-ratio:1;border-radius:8px;background:#f0f0f0;overflow:hidden;
-}
-.bg-card img{width:100%;height:100%;object-fit:cover;display:block;}
 
 /* ─── Backdrop ───────────────────────────────────────────────── */
 .backdrop{
@@ -105,8 +98,7 @@ html,body{
 
 /* ─── Trigger ────────────────────────────────────────────────── */
 .trigger-btn{
-  position:absolute;
-  bottom:88px;left:50%;transform:translateX(-50%);
+  position:relative;
   z-index:20;
   padding:14px 28px;
   background:var(--c0);
@@ -120,7 +112,7 @@ html,body{
   transition:transform .15s ease,box-shadow .15s ease,opacity .3s ease;
   white-space:nowrap;
 }
-.trigger-btn:active{transform:translateX(-50%) scale(0.97)}
+.trigger-btn:active{transform:scale(0.97)}
 .trigger-btn.hidden{opacity:0;pointer-events:none}
 
 /* ─── Bottom sheet ───────────────────────────────────────────── */
@@ -267,30 +259,6 @@ html,body{
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
-/* ─── Variant switcher ───────────────────────────────────────── */
-.var-sw{
-  position:fixed;
-  bottom:24px;left:50%;transform:translateX(-50%);
-  z-index:9999;
-  background:rgba(10,10,10,.82);
-  backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
-  border-radius:100px;
-  display:flex;gap:2px;padding:4px;
-  box-shadow:0 4px 20px rgba(0,0,0,.25);
-}
-@media(max-width:440px){
-  .var-sw{bottom:calc(env(safe-area-inset-bottom)+10px)}
-}
-.var-btn{
-  padding:7px 16px;
-  border-radius:100px;
-  color:rgba(255,255,255,.5);
-  font-family:"Greed",sans-serif;
-  font-size:13px;font-weight:450;
-  transition:background .2s ease,color .2s ease;
-  white-space:nowrap;
-}
-.var-btn.active{background:white;color:var(--c0)}
 </style>
 </head>
 <body>
@@ -316,13 +284,10 @@ html,body{
 
     <!-- Background content -->
     <div class="bg-screen">
-      <div class="bg-grid" id="bgGrid"></div>
+      <button class="trigger-btn" id="triggerBtn" onclick="openSheet()">
+        View recent generations
+      </button>
     </div>
-
-    <!-- Trigger -->
-    <button class="trigger-btn" id="triggerBtn" onclick="openSheet()">
-      View recent generations
-    </button>
 
     <!-- Backdrop -->
     <div class="backdrop" id="backdrop" onclick="closeSheet()"></div>
@@ -368,12 +333,6 @@ html,body{
   </div>
 </div>
 
-<!-- Variant switcher -->
-<div class="var-sw">
-  <button class="var-btn active" id="v1" onclick="setVariant(1)">4 cards</button>
-  <button class="var-btn"        id="v2" onclick="setVariant(2)">8 cards</button>
-  <button class="var-btn"        id="v3" onclick="setVariant(3)">1 card</button>
-</div>
 
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script>
@@ -392,29 +351,22 @@ const PROMPTS = [
 ];
 
 // ─── DOM refs ─────────────────────────────────────────────────────
-const sheet        = document.getElementById('sheet');
-const backdrop     = document.getElementById('backdrop');
-const triggerBtn   = document.getElementById('triggerBtn');
-const sheetBody    = document.getElementById('sheetBody');
-const largeHeader  = document.getElementById('largeHeader');
-const compactHdr   = document.getElementById('compactHeader');
-const sheetGrid    = document.getElementById('sheetGrid');
-const bgGrid       = document.getElementById('bgGrid');
+const sheet       = document.getElementById('sheet');
+const backdrop    = document.getElementById('backdrop');
+const triggerBtn  = document.getElementById('triggerBtn');
+const sheetBody   = document.getElementById('sheetBody');
+const largeHeader = document.getElementById('largeHeader');
+const compactHdr  = document.getElementById('compactHeader');
+const sheetGrid   = document.getElementById('sheetGrid');
 
-let isOpen       = false;
-let cardCount    = 4;
+let isOpen = false;
 
 // ─── How far (px) user must scroll before large→compact completes
 const SCROLL_RANGE = 88;
 
-// ─── Background grid ──────────────────────────────────────────────
-bgGrid.innerHTML = PHOTOS.map(src =>
-  `<div class="bg-card"><img src="${src}"/></div>`
-).join('');
-
-// ─── Build cards ──────────────────────────────────────────────────
-function buildCards(n) {
-  sheetGrid.innerHTML = Array.from({ length: n }, (_, i) => {
+// ─── Build cards (always 10, single-column) ───────────────────────
+function buildCards() {
+  sheetGrid.innerHTML = Array.from({ length: 10 }, (_, i) => {
     const src    = PHOTOS[i % PHOTOS.length];
     const prompt = PROMPTS[i % PROMPTS.length];
     return `
@@ -433,7 +385,7 @@ function openSheet() {
   if (isOpen) return;
   isOpen = true;
 
-  buildCards(cardCount);
+  buildCards();
 
   // Reset scroll + header state
   sheetBody.scrollTop = 0;
@@ -539,21 +491,6 @@ sheetBody.addEventListener('scroll', onScroll, { passive: true });
   window.addEventListener('mouseup',   end);
 })();
 
-// ─── Variant switcher ─────────────────────────────────────────────
-function setVariant(n) {
-  cardCount = n === 1 ? 1 : n === 2 ? 8 : 4;
-  [1, 2, 3].forEach(k => {
-    document.getElementById('v' + k).classList.toggle('active', k === n);
-  });
-  if (isOpen) {
-    // Quick re-open
-    gsap.killTweensOf('[data-stagger]');
-    sheet.classList.remove('open');
-    backdrop.classList.remove('open');
-    isOpen = false;
-    setTimeout(openSheet, 340);
-  }
-}
 </script>
 </body>
 </html>
