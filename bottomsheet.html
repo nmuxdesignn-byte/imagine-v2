@@ -82,6 +82,13 @@ html,body{
 .bg-screen{
   position:absolute;inset:0;
   display:flex;align-items:center;justify-content:center;
+  transform-origin:50% 0;
+  will-change:transform,border-radius;
+}
+.bg-screen.is-animating{
+  transition:
+    transform 400ms cubic-bezier(0.32,0.72,0,1),
+    border-radius 400ms cubic-bezier(0.32,0.72,0,1);
 }
 .trigger-btn{
   padding:14px 28px;
@@ -105,9 +112,12 @@ html,body{
   background:rgba(0,4,9,0.60);
   opacity:0;pointer-events:none;
   z-index:50;
-  transition:opacity 0.44s var(--ease);
+  will-change:opacity;
 }
-.backdrop.open{opacity:1;pointer-events:auto}
+.backdrop.is-animating{
+  transition:opacity 400ms cubic-bezier(0.32,0.72,0,1);
+}
+body.sheet-open .backdrop{pointer-events:auto}
 
 /* ─── Sheet ──────────────────────────────────────────────────────── */
 .sheet{
@@ -119,14 +129,16 @@ html,body{
   border-top-right-radius:16px;
   box-shadow:var(--shadow-sheet);
   z-index:51;
-  transform:translateY(100%);
-  transition:transform 0.52s cubic-bezier(0.34,1.12,0.64,1);
+  transform:translate3d(0,100%,0);
   display:flex;flex-direction:column;
   padding-bottom:env(safe-area-inset-bottom);
   overflow:hidden;
   touch-action:none;
+  will-change:transform;
 }
-.sheet.open{transform:translateY(0)}
+.sheet.is-animating{
+  transition:transform 400ms cubic-bezier(0.32,0.72,0,1);
+}
 
 /* ─── Handle zone ────────────────────────────────────────────────── */
 .sheet-handle-zone{
@@ -365,9 +377,54 @@ const sheetBody   = document.getElementById('sheetBody');
 const largeHeader = document.getElementById('largeHeader');
 const compactHdr  = document.getElementById('compactHeader');
 const sheetGrid   = document.getElementById('sheetGrid');
+const bgScreen    = document.querySelector('.bg-screen');
 
-let isOpen  = false;
-let largeH  = 0;   // measured height of .sheet-large, populated on open
+// ─── Vaul-style interaction constants ─────────────────────────────
+const PHONE_W     = 393;   // phone frame width (px)
+const WIN_OFFSET  = 16;    // inset on each side at full open
+const PAGE_DY     = 14;    // px the bg is pushed down when open
+const PAGE_R      = 8;     // px border-radius on bg when open
+const CLOSE_RATIO = 0.4;   // close if dragged > 40% of sheet height
+const CLOSE_VEL   = 0.5;   // px/ms flick velocity threshold
+const RUBBER      = 0.35;  // resistance when dragging up past 0
+
+function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
+function lerp(a, b, t)    { return a + (b - a) * t; }
+function scaleOpen()      { return (PHONE_W - WIN_OFFSET) / PHONE_W; }
+
+let isOpen    = false;
+let drawerH   = 0;
+let largeH    = 0;
+let dragging  = false;
+let startY    = 0;
+let lastY     = 0;
+let lastT     = 0;
+let velocity  = 0;
+let curTY     = 0;
+
+function measure() { drawerH = sheet.offsetHeight; }
+
+// Toggle transitions — OFF during finger drag (imperatively driven),
+// ON during settle so the easing kicks in.
+function setAnimating(on) {
+  [sheet, backdrop, bgScreen].forEach(el => el.classList.toggle('is-animating', on));
+}
+
+// Single source of truth for every visual state, driven by sheet translateY.
+// ty=0 → fully open; ty=drawerH → fully closed.
+function frame(ty) {
+  const p = clamp(1 - ty / Math.max(1, drawerH), 0, 1);
+
+  sheet.style.transform = `translate3d(0,${ty}px,0)`;
+
+  const scale  = lerp(1, scaleOpen(), p);
+  const pageY  = lerp(0, PAGE_DY, p);
+  const radius = lerp(0, PAGE_R, p);
+  bgScreen.style.transform    = `translate3d(0,${pageY}px,0) scale(${scale})`;
+  bgScreen.style.borderRadius = radius > 0 ? `${radius}px` : '';
+
+  backdrop.style.opacity = p;
+}
 
 // ─── Build 10 cards ───────────────────────────────────────────────
 function buildCards() {
@@ -394,21 +451,26 @@ function openSheet() {
   compactHdr.classList.remove('visible');
   largeHeader.style.opacity = '';
 
-  // All stagger targets start invisible
   gsap.set('[data-stagger]', { opacity: 0, y: 22 });
 
-  sheet.classList.add('open');
-  backdrop.classList.add('open');
+  // Position sheet at closed without transition, then animate to open.
+  setAnimating(false);
+  measure();
+  frame(drawerH);
+  sheet.getBoundingClientRect(); // force reflow so starting state paints
+
+  document.body.classList.add('sheet-open');
   triggerBtn.classList.add('hidden');
 
-  // Measure large header height after it renders (next frame after open)
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      largeH = largeHeader.offsetHeight;
-    });
-  });
+  setAnimating(true);
+  frame(0);
 
-  // Stagger: large header first, then cards sequentially
+  // Measure large header after render
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    largeH = largeHeader.offsetHeight;
+  }));
+
+  // Stagger content in while sheet is rising
   gsap.to('[data-stagger]', {
     opacity: 1, y: 0,
     duration: 0.46,
@@ -425,62 +487,77 @@ function closeSheet() {
   isOpen = false;
 
   gsap.killTweensOf('[data-stagger]');
-  sheet.classList.remove('open');
-  backdrop.classList.remove('open');
   compactHdr.classList.remove('visible');
   largeHeader.style.opacity = '';
 
-  setTimeout(() => triggerBtn.classList.remove('hidden'), 360);
+  setAnimating(true);
+  frame(drawerH);
+
+  setTimeout(() => {
+    document.body.classList.remove('sheet-open');
+    triggerBtn.classList.remove('hidden');
+    setAnimating(false);
+  }, 420);
 }
 
-// ─── Scroll: linear fade on large header, compact appears after ────
+// ─── Scroll: linear fade + compact header threshold ───────────────
 function onScroll() {
   if (!largeH) {
-    // Measure lazily on first scroll if not yet measured
     largeH = largeHeader.offsetHeight;
     if (!largeH) return;
   }
-
-  const scrollTop = sheetBody.scrollTop;
-
-  // Large header: linear opacity fade as it scrolls up — no transform, just fade
-  largeHeader.style.opacity = Math.max(0, 1 - scrollTop / largeH);
-
-  // Compact header: only appears once large header has fully exited the viewport
-  const fullyGone = scrollTop >= largeH;
-  compactHdr.classList.toggle('visible', fullyGone);
+  const st = sheetBody.scrollTop;
+  largeHeader.style.opacity = Math.max(0, 1 - st / largeH);
+  compactHdr.classList.toggle('visible', st >= largeH);
 }
 
 sheetBody.addEventListener('scroll', onScroll, { passive: true });
 
-// ─── Drag to dismiss ──────────────────────────────────────────────
+// ─── Drag to dismiss (Vaul-style: velocity + rubber-band) ─────────
 (function() {
-  let startY = 0, dragging = false;
   const zone = document.getElementById('handleZone');
 
   function start(e) {
     if (!isOpen) return;
-    startY   = e.touches ? e.touches[0].clientY : e.clientY;
+    startY   = lastY = e.touches ? e.touches[0].clientY : e.clientY;
+    lastT    = performance.now();
+    velocity = 0;
+    curTY    = 0;
     dragging = true;
-    sheet.style.transition = 'none';
+    setAnimating(false);
   }
+
   function move(e) {
     if (!dragging) return;
-    const dy = Math.max(0, (e.touches ? e.touches[0].clientY : e.clientY) - startY);
-    sheet.style.transform = `translateY(${dy}px)`;
-    backdrop.style.opacity = Math.max(0, 0.60 - dy / 500);
+    const y   = e.touches ? e.touches[0].clientY : e.clientY;
+    const now = performance.now();
+    const dt  = now - lastT;
+    if (dt > 0) velocity = (y - lastY) / dt;
+    lastY = y; lastT = now;
+
+    let dy = y - startY;
+    if (dy < 0) dy *= RUBBER; // resist upward over-drag
+    curTY = Math.max(0, dy);
+    frame(curTY);
   }
+
   function end() {
     if (!dragging) return;
     dragging = false;
-    sheet.style.transition = '';
-    const dy = parseFloat(sheet.style.transform.replace('translateY(', '')) || 0;
-    if (dy > 110) {
-      sheet.style.transform = '';
-      closeSheet();
+    const shouldClose = curTY > drawerH * CLOSE_RATIO || velocity > CLOSE_VEL;
+    setAnimating(true);
+    if (shouldClose) {
+      frame(drawerH);
+      isOpen = false;
+      setTimeout(() => {
+        document.body.classList.remove('sheet-open');
+        triggerBtn.classList.remove('hidden');
+        compactHdr.classList.remove('visible');
+        largeHeader.style.opacity = '';
+        setAnimating(false);
+      }, 420);
     } else {
-      sheet.style.transform = 'translateY(0)';
-      backdrop.style.opacity = '';
+      frame(0); // snap back open
     }
   }
 
