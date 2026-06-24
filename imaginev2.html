@@ -1,0 +1,922 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+<title>Imagine v2 · Prototype</title>
+<style>
+
+/* ── Fonts ───────────────────────────────────────────────── */
+@font-face {
+  font-family:"Greed";
+  src:url("./Greed/GreedStandardVF.woff2") format("woff2"),
+      url("./Greed/GreedStandardVF.ttf") format("truetype");
+  font-weight:100 900;font-style:normal;
+}
+
+/* ── Tokens ──────────────────────────────────────────────── */
+:root {
+  --bg:#ffffff;
+  --c0:#000409;
+  --c1:#67707c;
+  --stroke:#e0e1e1;
+  --accent:#56CBA4;
+  --icon-bg:#f7f7f8;
+  --hint-grad:linear-gradient(92.559deg,rgb(1,49,47) 4%,rgb(86,203,164) 100%);
+  --shadow-chat:0 4px 24px rgba(0,0,0,.16);
+  --shadow-sm:0 4px 16px rgba(0,4,9,.10);
+  --ease:cubic-bezier(0.32,0.72,0,1);
+  --spring:cubic-bezier(0.34,1.56,0.64,1);
+}
+
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+button{font-family:inherit;cursor:pointer;-webkit-tap-highlight-color:transparent}
+textarea{font-family:inherit}
+
+html,body{
+  width:100%;height:100%;
+  background:#f7f7f8;
+  display:flex;align-items:center;justify-content:center;
+  font-family:"Greed",-apple-system,sans-serif;
+  -webkit-font-smoothing:antialiased;
+  overscroll-behavior:none;
+}
+
+/* ── Phone frame ─────────────────────────────────────────── */
+.phone{
+  position:relative;width:393px;height:844px;
+  background:white;overflow:hidden;
+  box-shadow:0 32px 80px rgba(0,0,0,.35);
+  flex-shrink:0;
+}
+@media(max-width:440px){
+  html,body{background:white;align-items:flex-start}
+  .phone{width:100%;height:100dvh;box-shadow:none}
+}
+@media(min-width:441px) and (max-height:880px){
+  .phone{height:min(844px,100dvh);width:min(393px,100vw)}
+}
+
+.screen{position:relative;width:100%;height:100%;overflow:hidden;background:var(--bg)}
+
+/* ── Header (60px, z:20) ─────────────────────────────────── */
+.header{
+  position:absolute;top:0;left:0;right:0;
+  height:60px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px 10px 8px;
+  background:var(--bg);
+  z-index:20;
+}
+.hdr-back{
+  width:40px;height:40px;
+  border:none;background:transparent;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+}
+.credits-badge{
+  display:flex;align-items:center;gap:4px;
+  padding:1px 8px 1px 4px;
+  background:var(--icon-bg);border-radius:8px;
+  height:18px;
+}
+.credits-icon{
+  width:16px;height:16px;
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.credits-num{
+  font-size:16px;font-weight:450;line-height:18px;color:var(--c0);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+
+/* ── Status bar (v2 — hangs from header) ─────────────────── */
+/*
+  .v2-status is centered at top:60px (header bottom)
+  .v2-pill starts at translateY(-100%) → slides to translateY(0)
+  The header (z:20) visually covers the pill while it's at -100%
+  giving the "grows from header" effect.
+*/
+.v2-status{
+  position:absolute;
+  top:60px;left:50%;
+  transform:translateX(-50%);
+  z-index:10;
+  pointer-events:none;
+}
+.v2-pill{
+  background:white;
+  border-radius:0 0 14px 14px;
+  box-shadow:0 6px 20px rgba(0,4,9,.10);
+  display:flex;align-items:center;justify-content:center;
+  width:113px;height:36px;
+  overflow:hidden;
+  will-change:width,transform,opacity;
+  transform:translateY(-100%);
+  opacity:0;
+}
+.v2-pill.active{pointer-events:auto;cursor:pointer}
+
+/* Creating state */
+.v2-creating{
+  display:flex;align-items:center;gap:6px;
+  padding:0 12px;
+  white-space:nowrap;
+}
+@keyframes v2spin{to{transform:rotate(360deg)}}
+.v2-spin{
+  width:16px;height:16px;flex-shrink:0;
+  border:1.5px solid rgba(0,4,9,.12);
+  border-top-color:var(--c0);
+  border-radius:50%;
+  animation:v2spin .8s linear infinite;
+}
+.v2-creating span{
+  font-size:14px;font-weight:420;line-height:16px;color:var(--c0);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+
+/* Expanded state — 162x28 content inside 214x36 pill */
+.v2-exp{
+  display:none;
+  align-items:center;gap:8px;
+  padding:0 12px;
+  white-space:nowrap;width:100%;justify-content:center;
+}
+.v2-thumbs{position:relative;width:30px;height:28px;flex-shrink:0}
+.v2-th{
+  position:absolute;
+  width:26px;height:26px;
+  border-radius:4px;object-fit:cover;
+  border:1.5px solid white;
+  background:#e5e6e6;
+}
+.v2-th-back{left:0;top:2px;z-index:1;width:22px;height:22px}
+.v2-th-front{left:4px;top:0;z-index:2}
+.v2-exp-txt{
+  font-size:14px;font-weight:450;line-height:16px;color:var(--c0);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+
+/* Condensed state */
+.v2-cond{
+  display:none;
+  align-items:center;gap:8px;
+  padding:0 14px;
+  width:100%;justify-content:center;
+}
+.v2-cond-num{
+  font-size:15px;font-weight:450;line-height:16px;color:var(--c0);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+  flex-shrink:0;
+}
+.v2-cond-bar{
+  flex:1;height:3px;
+  background:rgba(0,4,9,.08);
+  border-radius:99px;
+  overflow:hidden;
+}
+.v2-cond-fill{
+  height:100%;width:100%;
+  background:var(--c0);
+  border-radius:99px;
+  transform-origin:left;
+}
+
+/* ── Scroll area ─────────────────────────────────────────── */
+.scroll{
+  position:absolute;inset:0;
+  overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+.hdr-spacer{height:60px;flex-shrink:0}
+
+/* ── Title ───────────────────────────────────────────────── */
+.title-wrap{
+  display:flex;flex-direction:column;align-items:center;gap:2px;
+  padding:0 24px;margin-top:24px;margin-bottom:32px;
+}
+.imagine-spark{position:relative;display:inline-block}
+.sparkle-star{
+  position:absolute;top:3px;left:50%;
+  transform:translateX(-50%);
+  width:6.421px;height:7.362px;
+  pointer-events:none;
+}
+.title-wrap p{
+  font-size:24px;line-height:26px;color:var(--c0);
+  text-align:center;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+.t-light{font-weight:300;letter-spacing:-0.72px}
+.t-medium{font-weight:450;letter-spacing:-0.288px}
+.t-cursor{color:var(--accent)}
+
+/* ── Gallery grid ────────────────────────────────────────── */
+.gallery{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  column-gap:14px;row-gap:12px;
+  padding:0 24px;
+}
+.g-card{
+  position:relative;
+  width:164px;height:164px;
+  border-radius:8px;overflow:hidden;
+  background:#f0f0f0;cursor:pointer;
+  flex-shrink:0;
+}
+.g-card img{
+  width:100%;height:100%;object-fit:cover;display:block;
+  pointer-events:none;
+}
+.g-card-tap{position:absolute;inset:0}
+.g-card:active .g-card-tap{background:rgba(0,0,0,.10)}
+
+/* New generated card: skeleton → loaded animation */
+.g-card.skeleton{background:linear-gradient(135deg,#e8e8e8,#d4d4d4)}
+@keyframes skelPulse{0%,100%{opacity:.6}50%{opacity:1}}
+.g-card.skeleton::after{
+  content:'';position:absolute;inset:0;
+  background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.5) 50%,transparent 100%);
+  animation:skelPulse 1.2s ease infinite;
+}
+.g-card.loaded{animation:cardPop .42s cubic-bezier(0.34,1.56,0.64,1) both}
+@keyframes cardPop{from{transform:scale(0.88);opacity:0}to{transform:scale(1);opacity:1}}
+
+/* "Use" / "Explore" overlay button */
+.g-use-btn{
+  position:absolute;bottom:8px;right:8px;
+  display:flex;align-items:center;gap:4px;
+  padding:4px 7px;
+  background:rgba(0,4,9,.30);
+  backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
+  border-radius:4px;border:none;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+}
+.g-use-btn span{
+  font-size:14px;font-weight:450;line-height:16px;color:#fff;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+
+/* ── Bottom gradient fade ─────────────────────────────────── */
+.fade-bottom{
+  position:absolute;left:0;right:0;bottom:0;
+  height:200px;
+  background:linear-gradient(180deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.75) 65%,#fff 85%);
+  pointer-events:none;z-index:15;
+}
+
+/* ── Chat box ────────────────────────────────────────────── */
+.chat{
+  position:absolute;
+  left:calc(50% - 179px);width:358px;
+  bottom:24px;height:56px;
+  overflow:hidden;
+  background:rgba(255,255,255,.96);
+  border:1px solid white;
+  border-radius:12px;
+  box-shadow:var(--shadow-chat);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  z-index:25;cursor:pointer;
+  transition:height .48s var(--ease),transform .38s var(--ease);
+}
+.chat.expanded{height:200px;cursor:default}
+
+/* Floating + button */
+.chat-add{
+  position:absolute;left:12px;top:12px;
+  width:32px;height:32px;
+  background:white;border:1px solid #e1e2e5;border-radius:50%;
+  box-shadow:0 4px 6px rgba(0,0,0,.04);
+  display:flex;align-items:center;justify-content:center;
+  z-index:3;pointer-events:none;
+  transition:top .48s var(--ease);
+  flex-shrink:0;
+}
+.chat.expanded .chat-add{top:100px;pointer-events:auto;cursor:pointer}
+
+/* Generating state label */
+.chat-gen-label{
+  position:absolute;inset:0;
+  display:block;
+  padding:0 56px 0 16px;
+  line-height:56px;
+  opacity:0;pointer-events:none;
+  font-size:16px;font-weight:420;color:var(--c0);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+  transition:opacity .2s ease;
+}
+.chat.generating .chat-gen-label{opacity:1}
+.chat.generating .chat-hint{opacity:0!important;pointer-events:none}
+.chat.generating .chat-add{opacity:0;pointer-events:none!important}
+.chat.generating{pointer-events:none}
+
+/* Hint */
+.chat-hint{
+  position:absolute;inset:0;display:flex;align-items:center;
+  padding-left:52px;padding-right:12px;
+  opacity:1;transform:translateY(0);
+  transition:opacity .2s ease,transform .26s ease;cursor:pointer;
+}
+.chat.expanded .chat-hint{opacity:0;visibility:hidden;transform:translateY(-12px);pointer-events:none}
+.chat-hint-wrap{
+  flex:1;overflow:hidden;display:flex;align-items:center;
+  font-size:16px;font-weight:420;line-height:18px;color:var(--c1);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;white-space:nowrap;
+}
+.chat-hint-rolling{overflow:hidden;height:18px;display:inline-flex;flex-direction:column;flex-shrink:0}
+.hint-item{
+  height:18px;line-height:18px;
+  background:var(--hint-grad);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  background-clip:text;white-space:nowrap;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+
+/* Textarea */
+.chat-tx-area{
+  position:absolute;top:12px;left:12px;right:12px;height:80px;
+  opacity:0;pointer-events:none;
+  transition:opacity .22s ease 0s;
+}
+.chat.expanded .chat-tx-area{opacity:1;pointer-events:auto;transition:opacity .22s ease .14s}
+.chat-tx{
+  width:100%;height:100%;border:none;outline:none;resize:none;background:transparent;
+  font-size:16px;line-height:20px;color:var(--c0);
+  font-family:"Greed",sans-serif;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+  padding:8px 12px 0 0;
+}
+.chat-tx::placeholder{color:var(--c1)}
+
+/* Dice */
+.chat-dice{
+  position:absolute;top:100px;left:52px;
+  width:32px;height:32px;
+  background:white;border:1px solid #e1e2e5;border-radius:50%;
+  box-shadow:0 4px 6px rgba(0,0,0,.04);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;transition:opacity .5s ease .05s;cursor:pointer;z-index:3;
+}
+.chat.expanded .chat-dice{opacity:1;transition:opacity .5s ease .15s}
+
+/* Create CTA */
+.btn-create{
+  position:absolute;bottom:12px;left:12px;right:12px;height:44px;
+  background:var(--c0);border:none;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;padding:0 24px;cursor:pointer;
+  box-shadow:inset 0 2px 2px rgba(255,255,255,.25);
+  opacity:0;pointer-events:none;
+  transition:opacity .22s ease;
+}
+.chat.expanded .btn-create{opacity:1;pointer-events:auto;transition:opacity .22s ease .14s}
+.bc-label{
+  font-size:16px;font-weight:450;line-height:18px;color:white;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+.bc-sep{width:1px;height:16px;background:rgba(255,255,255,.3);flex-shrink:0}
+.bc-credit-val{
+  font-size:16px;font-weight:450;line-height:18px;color:white;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+
+/* ── Toast ───────────────────────────────────────────────── */
+.toast{
+  position:absolute;
+  bottom:96px;left:50%;
+  transform:translateX(-50%) translateY(20px);
+  background:var(--c0);
+  border-radius:20px;
+  padding:8px 14px 8px 8px;
+  display:flex;align-items:center;gap:8px;
+  white-space:nowrap;z-index:30;
+  opacity:0;pointer-events:none;
+  transition:opacity .3s ease, transform .35s var(--ease);
+}
+.toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
+.toast-thumb{
+  width:28px;height:28px;border-radius:6px;
+  object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#d4f5e6,#a8e6cc);
+  overflow:hidden;
+}
+.toast-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.toast span{
+  font-size:13px;font-weight:420;line-height:15px;color:white;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+
+/* ── Full-screen preview ─────────────────────────────────── */
+.preview-overlay{
+  position:absolute;inset:0;
+  background:rgba(0,4,9,.85);
+  z-index:80;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;
+  transition:opacity .28s ease;
+}
+.preview-overlay.open{opacity:1;pointer-events:auto}
+.preview-img{
+  width:calc(100% - 48px);
+  max-height:80%;
+  object-fit:contain;
+  border-radius:12px;
+  transform:scale(0.92);
+  transition:transform .32s cubic-bezier(0.34,1.2,0.64,1);
+}
+.preview-overlay.open .preview-img{transform:scale(1)}
+.preview-close{
+  position:absolute;top:20px;right:20px;
+  width:36px;height:36px;border:none;
+  background:rgba(255,255,255,.12);
+  border-radius:50%;display:flex;align-items:center;justify-content:center;
+}
+
+</style>
+</head>
+<body>
+<div class="phone">
+<div class="screen">
+
+  <!-- ── Header ─────────────────────────────────────────────── -->
+  <header class="header" id="header">
+    <button class="hdr-back" onclick="history.back()">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+        <path d="M5.5 12h13M10 7l-5 5 5 5" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+    <div class="credits-badge">
+      <div class="credits-icon">
+        <!-- Diamond / credits icon -->
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <ellipse cx="8" cy="8" rx="6.4" ry="6.4" fill="#EDF66E"/>
+          <path d="M8 5.33l1.78 2.45L11.5 8 9.78 9.22 8 11.67 6.22 9.22 4.5 8l1.72-1.22L8 5.33Z" fill="#000409" stroke="none"/>
+        </svg>
+      </div>
+      <span class="credits-num">23</span>
+    </div>
+  </header>
+
+  <!-- ── Status bar (v2) ────────────────────────────────────── -->
+  <div class="v2-status" id="v2Status">
+    <div class="v2-pill" id="v2Pill">
+
+      <!-- Creating state -->
+      <div class="v2-creating" id="v2Creating">
+        <div class="v2-spin"></div>
+        <span>Creating...</span>
+      </div>
+
+      <!-- Expanded state -->
+      <div class="v2-exp" id="v2Exp">
+        <div class="v2-thumbs">
+          <img class="v2-th v2-th-back" id="v2ThBack" src="./photos/photo-1.jpg" alt="">
+          <img class="v2-th v2-th-front" id="v2ThFront" src="./photos/photo-2.png" alt="">
+        </div>
+        <span class="v2-exp-txt" id="v2ExpTxt">1 images created</span>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M3 5l4 4 4-4" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
+
+      <!-- Condensed state -->
+      <div class="v2-cond" id="v2Cond">
+        <span class="v2-cond-num" id="v2CndNum">1</span>
+        <div class="v2-cond-bar">
+          <div class="v2-cond-fill" id="v2CndFill"></div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Scrollable content ─────────────────────────────────── -->
+  <div class="scroll" id="mainScroll">
+    <div class="hdr-spacer"></div>
+
+    <!-- Title -->
+    <div class="title-wrap">
+      <p class="t-light">Imag<span class="imagine-spark"><!-- sparkle -->
+        <svg class="sparkle-star" width="6.421" height="7.362" viewBox="0 0 7 8" fill="none">
+          <path d="M4.32982 0.274772C4.33345 -0.0143606 3.99931 -0.103894 3.84704 0.145412L3.16701 1.24957C2.76352 1.90422 2.11563 2.32781 1.42909 2.38585L0.271406 2.48321C0.0103042 2.50523 -0.100782 2.88586 0.110906 3.03315L1.04795 3.6918C1.60349 4.08264 1.92807 4.76681 1.91864 5.52705L1.90228 6.80904C1.89864 7.09817 2.23279 7.1877 2.38505 6.9384L3.06509 5.83424C3.46858 5.17959 4.11647 4.75599 4.80301 4.69796L5.95877 4.59867C6.21987 4.57665 6.33096 4.19602 6.11927 4.04873L5.18223 3.39008C4.62669 2.99924 4.3021 2.31507 4.31154 1.55483L4.32982 0.274772Z" fill="#56CBA4"/>
+        </svg>i</span>ne yourself in</p>
+      <p class="t-medium">Any look. Any place <span class="t-cursor">|</span></p>
+    </div>
+
+    <!-- Gallery grid -->
+    <div class="gallery" id="gallery"></div>
+
+    <div style="height:120px"></div>
+  </div>
+
+  <!-- Bottom gradient -->
+  <div class="fade-bottom"></div>
+
+  <!-- ── Chat box ───────────────────────────────────────────── -->
+  <div class="chat" id="chat" onclick="handleChatClick(event)">
+
+    <button class="chat-add" id="chatAdd" onclick="handleChatAdd(event)">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M1.666 8H14.333" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M8 14.333V1.667" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
+    <div class="chat-gen-label" id="chatGenLabel"></div>
+
+    <div class="chat-hint" id="chatHint">
+      <div class="chat-hint-wrap">
+        <span style="margin-right:3px">Create a picture of me</span>
+        <div class="chat-hint-rolling" id="hintRoller">
+          <span class="hint-item" id="hintText">as superhero</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="chat-tx-area" id="chatTxArea">
+      <textarea class="chat-tx" id="chatTx" rows="3" placeholder="Describe your look…" oninput="onTxInput()"></textarea>
+    </div>
+
+    <div class="chat-dice" id="chatDice" onclick="event.stopPropagation();rollDice()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <g clip-path="url(#dp)">
+          <path d="M11.5557 10.9219C11.4515 10.9219 11.3663 11.0063 11.3662 11.1104C11.3662 11.2145 11.4515 11.2998 11.5557 11.2998C11.6598 11.2997 11.7441 11.2145 11.7441 11.1104C11.744 11.0063 11.6597 10.922 11.5557 10.9219Z" fill="#000409" stroke="#000409" stroke-width="1.4"/>
+          <path d="M7.55566 6.92188C7.45153 6.92188 7.36633 7.00625 7.36621 7.11035C7.36621 7.21455 7.45146 7.2998 7.55566 7.2998C7.65977 7.29969 7.74414 7.21448 7.74414 7.11035C7.74402 7.00633 7.6597 6.92199 7.55566 6.92188Z" fill="#000409" stroke="#000409" stroke-width="1.4"/>
+          <path d="M9.55545 9.99946C9.06478 9.99946 8.66656 9.6015 8.66656 9.11057C8.66656 8.61964 9.06478 8.22168 9.55545 8.22168C10.0461 8.22168 10.4443 8.61964 10.4443 9.11057C10.4443 9.6015 10.0461 9.99946 9.55545 9.99946Z" fill="#000409"/>
+          <path d="M12.6666 13.9995H6.44434C5.46212 13.9995 4.66656 13.2035 4.66656 12.2217V5.99946C4.66656 5.01759 5.46212 4.22168 6.44434 4.22168H12.6666C13.6488 4.22168 14.4443 5.01759 14.4443 5.99946V12.2217C14.4443 13.2035 13.6488 13.9995 12.6666 13.9995Z" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2.44406 9.91578L1.57473 4.0661C1.43073 3.09454 2.10095 2.19054 3.07162 2.04654L9.22628 1.13098C9.96974 1.02023 10.6732 1.38663 11.0273 2.00032" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </g>
+        <defs><clipPath id="dp"><rect width="16" height="16" fill="white"/></clipPath></defs>
+      </svg>
+    </div>
+
+    <button class="btn-create" id="btnCreate" onclick="handleCreate(event)">
+      <span class="bc-label">Create</span>
+      <div class="bc-sep"></div>
+      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
+        <circle cx="8" cy="8" r="6.4" stroke="white" stroke-width="1.4"/>
+        <path d="M7.686 5.648L5.648 7.686a.457.457 0 000 .628l2.038 2.038a.457.457 0 00.628 0l2.038-2.038a.457.457 0 000-.628L8.314 5.648a.457.457 0 00-.628 0Z" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="bc-credit-val">1</span>
+    </button>
+
+  </div><!-- end .chat -->
+
+  <!-- ── Toast ─────────────────────────────────────────────── -->
+  <div class="toast" id="toast">
+    <div class="toast-thumb" id="toastThumb"></div>
+    <span>Created image added to Gallery</span>
+  </div>
+
+  <!-- ── Preview overlay ───────────────────────────────────── -->
+  <div class="preview-overlay" id="previewOverlay" onclick="closePreview()">
+    <img class="preview-img" id="previewImg" src="" alt="">
+    <button class="preview-close" onclick="closePreview()">
+      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <path d="M1 1l12 12M13 1L1 13" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+    </button>
+  </div>
+
+</div><!-- end .screen -->
+</div><!-- end .phone -->
+
+<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
+<script>
+
+// ── Refs ─────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+const mainScroll   = $('mainScroll');
+const chat         = $('chat');
+const chatTx       = $('chatTx');
+const chatGenLabel = $('chatGenLabel');
+const btnCreate    = $('btnCreate');
+const v2Pill       = $('v2Pill');
+const v2Creating   = $('v2Creating');
+const v2Exp        = $('v2Exp');
+const v2Cond       = $('v2Cond');
+const toast        = $('toast');
+const gallery      = $('gallery');
+const previewOverlay = $('previewOverlay');
+const previewImg     = $('previewImg');
+
+// ── State ─────────────────────────────────────────────────────────
+const S = {
+  chatOpen: false,
+  promptText: '',
+  statusPhase: 'hidden',  // hidden | creating | expanded | condensed
+  genCount: 0,
+  genImages: [],          // srcs of generated images (for thumbnails)
+};
+
+// ── Data ──────────────────────────────────────────────────────────
+const PHOTOS = [
+  './photos/photo-1.jpg',
+  './photos/photo-2.png',
+  './photos/photo-1.jpg',
+  './photos/photo-2.png',
+  './photos/photo-1.jpg',
+  './photos/photo-2.png',
+  './photos/photo-1.jpg',
+  './photos/photo-2.png',
+];
+const PROMPTS = [
+  'standing in front of the Eiffel Tower in a black leather jacket',
+  'as a CEO in a glass office at golden hour',
+  'hiking in the Dolomites at sunrise in a red parka',
+  'on a yacht in the Mediterranean wearing white linen',
+  'as a barista in a cozy New York coffee shop',
+];
+const HINTS = ['as superhero','in a black tuxedo','as an artist','in Tokyo at night','at a beach wedding','as a chef','in the Himalayas','at golden hour'];
+const GENERATED_IMGS = ['./photos/generated-01.png','./photos/generated-02.png'];
+
+let hintIdx = 0, hintTimer;
+let diceSpinning = false;
+let genTimer1, genTimer2, genTimer3, toastTimer;
+let condenseOnScroll = false;
+
+// ── Gallery ───────────────────────────────────────────────────────
+function buildGallery() {
+  gallery.innerHTML = '';
+  PHOTOS.forEach((src, i) => {
+    const btn = i === 5 ? 'Explore' : 'Use';
+    const card = document.createElement('div');
+    card.className = 'g-card';
+    card.innerHTML = `
+      <img src="${src}" loading="lazy" draggable="false"/>
+      <div class="g-card-tap"></div>
+      <button class="g-use-btn" onclick="event.stopPropagation();useCard('${src}')">
+        <span>${btn}</span>
+      </button>
+    `;
+    card.addEventListener('click', () => openPreview(src));
+    gallery.appendChild(card);
+  });
+}
+
+function useCard(src) {
+  collapsePrompt();
+  expandPromptWithText('Create a picture like this…');
+}
+
+function prependGeneratedCard(src) {
+  const card = document.createElement('div');
+  card.className = 'g-card skeleton';
+  card.innerHTML = `<div class="g-card-tap"></div>`;
+  gallery.prepend(card);
+
+  // Swap to loaded image after short delay
+  setTimeout(() => {
+    card.innerHTML = `
+      <img src="${src}" draggable="false"/>
+      <div class="g-card-tap"></div>
+      <button class="g-use-btn" onclick="event.stopPropagation()">
+        <span>Use</span>
+      </button>
+    `;
+    card.classList.remove('skeleton');
+    card.classList.add('loaded');
+    card.querySelector('img').addEventListener('click', e => {
+      e.stopPropagation();
+      openPreview(src);
+    });
+    card.addEventListener('click', () => openPreview(src));
+  }, 800);
+}
+
+// ── Hint cycle ────────────────────────────────────────────────────
+function startHintCycle() {
+  hintTimer = setInterval(() => {
+    if (S.chatOpen) return;
+    const el = $('hintText');
+    el.style.transition = 'transform .28s cubic-bezier(.4,0,1,1), opacity .22s ease';
+    el.style.transform = 'translateY(-10px)';
+    el.style.opacity = '0';
+    setTimeout(() => {
+      hintIdx = (hintIdx + 1) % HINTS.length;
+      el.textContent = HINTS[hintIdx];
+      el.style.transition = 'none';
+      el.style.transform = 'translateY(14px)';
+      el.style.opacity = '0';
+      requestAnimationFrame(() => requestAnimationFrame(() => {
+        el.style.transition = 'transform .42s cubic-bezier(.22,1,.36,1), opacity .3s ease';
+        el.style.transform = 'translateY(0)';
+        el.style.opacity = '1';
+      }));
+    }, 300);
+  }, 3200);
+}
+
+// ── Chat handlers ─────────────────────────────────────────────────
+function handleChatClick(e) {
+  if (!S.chatOpen) expandPrompt();
+}
+function handleChatAdd(e) {
+  e.stopPropagation();
+  expandPrompt();
+}
+
+function expandPrompt() {
+  S.chatOpen = true;
+  chat.classList.add('expanded');
+  clearInterval(hintTimer);
+  setTimeout(() => chatTx.focus(), 80);
+}
+
+function expandPromptWithText(txt) {
+  chatTx.value = txt;
+  S.promptText = txt;
+  S.chatOpen = true;
+  chat.classList.add('expanded');
+  clearInterval(hintTimer);
+}
+
+function collapsePrompt() {
+  S.chatOpen = false;
+  chat.classList.remove('expanded');
+  chat.style.transform = '';
+  chatTx.blur();
+  startHintCycle();
+}
+
+function onTxInput() {
+  S.promptText = chatTx.value;
+}
+
+function rollDice() {
+  if (diceSpinning) return;
+  diceSpinning = true;
+  const svg = document.querySelector('#chatDice svg');
+  svg.style.transition = 'transform .3s ease';
+  svg.style.transform = 'rotate(180deg)';
+  setTimeout(() => { svg.style.transform = 'rotate(0deg)'; }, 320);
+  setTimeout(() => { diceSpinning = false; }, 350);
+  const idx = Math.floor(Math.random() * PROMPTS.length);
+  chatTx.style.opacity = '0';
+  setTimeout(() => {
+    chatTx.value = PROMPTS[idx];
+    chatTx.style.transition = 'opacity .2s ease';
+    chatTx.style.opacity = '1';
+    S.promptText = PROMPTS[idx];
+    onTxInput();
+  }, 160);
+}
+
+function handleCreate(e) {
+  if (e) e.stopPropagation();
+  const prompt = (S.promptText || chatTx.value || '').trim();
+  if (!prompt) return;
+
+  // Collapse chat → generating state
+  S.chatOpen = false;
+  chatGenLabel.textContent = prompt;
+  chat.classList.remove('expanded');
+  chat.classList.add('generating');
+  chatTx.value = '';
+  S.promptText = '';
+  clearInterval(hintTimer);
+
+  // Start generation flow
+  startGeneration(prompt);
+}
+
+// ── Generation flow ───────────────────────────────────────────────
+function startGeneration(prompt) {
+  S.statusPhase = 'creating';
+
+  // Step 1: show creating pill sliding from header
+  showCreatingPill();
+
+  // Step 2: after 2.5s — morph to expanded
+  genTimer1 = setTimeout(() => {
+    const genSrc = GENERATED_IMGS[S.genCount % GENERATED_IMGS.length];
+    S.genCount++;
+    S.genImages.unshift(genSrc);
+    morphToExpanded(genSrc);
+
+    // Add image to grid
+    setTimeout(() => prependGeneratedCard(genSrc), 200);
+
+    // Toast
+    genTimer2 = setTimeout(() => showToast(genSrc), 600);
+
+    // Reset chat after a moment
+    genTimer3 = setTimeout(() => {
+      chat.classList.remove('generating');
+      startHintCycle();
+    }, 800);
+
+  }, 2500);
+}
+
+// ── Status bar animation ──────────────────────────────────────────
+function showCreatingPill() {
+  // Reset to creating state
+  setStatusContent('creating');
+  gsap.set(v2Pill, { width: 113, height: 36, opacity: 1, y: -36 });
+  gsap.to(v2Pill, {
+    y: 0,
+    duration: 0.55,
+    ease: 'back.out(1.3)',
+  });
+}
+
+function morphToExpanded(imgSrc) {
+  S.statusPhase = 'expanded';
+  condenseOnScroll = true;
+
+  // Update thumbnail
+  $('v2ThFront').src = imgSrc;
+  $('v2ThBack').src = PHOTOS[0];
+
+  // Crossfade content
+  gsap.to(v2Creating, { opacity: 0, duration: 0.18, onComplete: () => {
+    setStatusContent('expanded');
+    gsap.fromTo(v2Exp, { opacity: 0 }, { opacity: 1, duration: 0.22 });
+  }});
+
+  // Morph pill width
+  gsap.to(v2Pill, {
+    width: 214,
+    duration: 0.52,
+    ease: 'back.out(1.4)',
+  });
+}
+
+function condenseStatus() {
+  if (S.statusPhase !== 'expanded') return;
+  S.statusPhase = 'condensed';
+
+  gsap.to(v2Exp, { opacity: 0, duration: 0.14, onComplete: () => {
+    setStatusContent('condensed');
+    gsap.fromTo(v2Cond, { opacity: 0 }, { opacity: 1, duration: 0.18 });
+  }});
+
+  gsap.to(v2Pill, {
+    width: 88,
+    height: 28,
+    duration: 0.38,
+    ease: 'power3.inOut',
+  });
+}
+
+function expandStatus() {
+  if (S.statusPhase !== 'condensed') return;
+  S.statusPhase = 'expanded';
+
+  gsap.to(v2Cond, { opacity: 0, duration: 0.14, onComplete: () => {
+    setStatusContent('expanded');
+    gsap.fromTo(v2Exp, { opacity: 0 }, { opacity: 1, duration: 0.18 });
+  }});
+
+  gsap.to(v2Pill, {
+    width: 214,
+    height: 36,
+    duration: 0.42,
+    ease: 'back.out(1.3)',
+  });
+}
+
+function setStatusContent(state) {
+  v2Creating.style.display = state === 'creating' ? 'flex' : 'none';
+  v2Exp.style.display      = state === 'expanded'  ? 'flex' : 'none';
+  v2Cond.style.display     = state === 'condensed' ? 'flex' : 'none';
+
+  if (state === 'creating') {
+    gsap.set(v2Creating, { opacity: 1 });
+  }
+}
+
+// ── Scroll: condense / expand status ─────────────────────────────
+mainScroll.addEventListener('scroll', () => {
+  if (!condenseOnScroll) return;
+  const st = mainScroll.scrollTop;
+  if (st > 24 && S.statusPhase === 'expanded') condenseStatus();
+  if (st < 8  && S.statusPhase === 'condensed') expandStatus();
+}, { passive: true });
+
+// ── Toast ─────────────────────────────────────────────────────────
+function showToast(src) {
+  const thumb = $('toastThumb');
+  thumb.innerHTML = src ? `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">` : '';
+  toast.classList.add('visible');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => toast.classList.remove('visible'), 3000);
+}
+
+// ── Preview ───────────────────────────────────────────────────────
+function openPreview(src) {
+  previewImg.src = src;
+  previewOverlay.classList.add('open');
+}
+function closePreview() {
+  previewOverlay.classList.remove('open');
+}
+
+// ── Init ──────────────────────────────────────────────────────────
+buildGallery();
+startHintCycle();
+
+</script>
+</body>
+</html>
