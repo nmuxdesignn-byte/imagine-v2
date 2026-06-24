@@ -26,7 +26,6 @@
   --shadow-chat:0 4px 24px rgba(0,0,0,.16);
   --shadow-sm:0 4px 16px rgba(0,4,9,.10);
   --ease:cubic-bezier(0.32,0.72,0,1);
-  --spring:cubic-bezier(0.34,1.56,0.64,1);
 }
 
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -61,125 +60,91 @@ html,body{
 
 /* ── Header (60px, z:20) ─────────────────────────────────── */
 .header{
-  position:absolute;top:0;left:0;right:0;
-  height:60px;
+  position:absolute;top:0;left:0;right:0;height:60px;
   display:flex;align-items:center;justify-content:space-between;
   padding:10px 16px 10px 8px;
-  background:var(--bg);
-  z-index:20;
+  background:var(--bg);z-index:20;
 }
 .hdr-back{
-  width:40px;height:40px;
-  border:none;background:transparent;border-radius:6px;
+  width:40px;height:40px;border:none;background:transparent;border-radius:6px;
   display:flex;align-items:center;justify-content:center;
 }
 .credits-badge{
   display:flex;align-items:center;gap:4px;
   padding:1px 8px 1px 4px;
-  background:var(--icon-bg);border-radius:8px;
-  height:18px;
-}
-.credits-icon{
-  width:16px;height:16px;
-  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  background:var(--icon-bg);border-radius:8px;height:18px;
 }
 .credits-num{
   font-size:16px;font-weight:450;line-height:18px;color:var(--c0);
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
-/* ── Status bar (v2 — hangs from header) ─────────────────── */
+/* ── Status bar: hangs from header bottom ────────────────── */
 /*
-  .v2-status is centered at top:60px (header bottom)
-  .v2-pill starts at translateY(-100%) → slides to translateY(0)
-  The header (z:20) visually covers the pill while it's at -100%
-  giving the "grows from header" effect.
+  The header (z:20) covers the pill while it slides in from above,
+  creating the "grows from header" effect. Pill r=8 (Figma spec).
 */
 .v2-status{
-  position:absolute;
-  top:60px;left:50%;
+  position:absolute;top:60px;left:50%;
   transform:translateX(-50%);
-  z-index:10;
-  pointer-events:none;
+  z-index:10;pointer-events:none;
 }
 .v2-pill{
   background:white;
-  border-radius:0 0 14px 14px;
+  border-radius:8px;
   box-shadow:0 6px 20px rgba(0,4,9,.10);
   display:flex;align-items:center;justify-content:center;
   width:113px;height:36px;
   overflow:hidden;
-  will-change:width,transform,opacity;
   transform:translateY(-100%);
   opacity:0;
+  will-change:width,height,transform,opacity;
 }
 .v2-pill.active{pointer-events:auto;cursor:pointer}
 
-/* Creating state */
+/* Creating content */
 .v2-creating{
-  display:flex;align-items:center;gap:6px;
-  padding:0 12px;
-  white-space:nowrap;
+  display:flex;align-items:center;gap:8px;padding:0 12px;white-space:nowrap;
 }
 @keyframes v2spin{to{transform:rotate(360deg)}}
 .v2-spin{
   width:16px;height:16px;flex-shrink:0;
-  border:1.5px solid rgba(0,4,9,.12);
-  border-top-color:var(--c0);
-  border-radius:50%;
-  animation:v2spin .8s linear infinite;
+  border:1.5px solid rgba(0,4,9,.12);border-top-color:var(--c0);
+  border-radius:50%;animation:v2spin .8s linear infinite;
 }
 .v2-creating span{
   font-size:14px;font-weight:420;line-height:16px;color:var(--c0);
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
-/* Expanded state — 162x28 content inside 214x36 pill */
+/* Expanded content */
 .v2-exp{
-  display:none;
-  align-items:center;gap:8px;
-  padding:0 12px;
-  white-space:nowrap;width:100%;justify-content:center;
+  display:none;align-items:center;gap:8px;
+  padding:0 14px;white-space:nowrap;width:100%;justify-content:center;
 }
 .v2-thumbs{position:relative;width:30px;height:28px;flex-shrink:0}
 .v2-th{
-  position:absolute;
-  width:26px;height:26px;
-  border-radius:4px;object-fit:cover;
-  border:1.5px solid white;
-  background:#e5e6e6;
+  position:absolute;border-radius:4px;object-fit:cover;
+  border:1.5px solid white;background:#e5e6e6;
 }
-.v2-th-back{left:0;top:2px;z-index:1;width:22px;height:22px}
-.v2-th-front{left:4px;top:0;z-index:2}
+.v2-th-back{width:22px;height:22px;left:0;top:3px;z-index:1}
+.v2-th-front{width:26px;height:26px;left:4px;top:0;z-index:2}
 .v2-exp-txt{
   font-size:14px;font-weight:450;line-height:16px;color:var(--c0);
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
-/* Condensed state */
+/* Condensed content */
 .v2-cond{
-  display:none;
-  align-items:center;gap:8px;
-  padding:0 14px;
-  width:100%;justify-content:center;
+  display:none;align-items:center;gap:8px;
+  padding:0 12px;white-space:nowrap;width:100%;
 }
 .v2-cond-num{
-  font-size:15px;font-weight:450;line-height:16px;color:var(--c0);
+  font-size:14px;font-weight:450;color:var(--c0);flex-shrink:0;
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
-  flex-shrink:0;
 }
-.v2-cond-bar{
-  flex:1;height:3px;
-  background:rgba(0,4,9,.08);
-  border-radius:99px;
-  overflow:hidden;
-}
-.v2-cond-fill{
-  height:100%;width:100%;
-  background:var(--c0);
-  border-radius:99px;
-  transform-origin:left;
-}
+.v2-cond-bar{flex:1;height:3px;background:rgba(0,4,9,.10);border-radius:99px;overflow:hidden}
+.v2-cond-fill{height:100%;width:100%;background:var(--c0);border-radius:99px}
 
 /* ── Scroll area ─────────────────────────────────────────── */
 .scroll{
@@ -187,7 +152,7 @@ html,body{
   overflow-y:auto;-webkit-overflow-scrolling:touch;
   overscroll-behavior:contain;
 }
-.hdr-spacer{height:60px;flex-shrink:0}
+.hdr-spacer{height:60px}
 
 /* ── Title ───────────────────────────────────────────────── */
 .title-wrap{
@@ -196,14 +161,11 @@ html,body{
 }
 .imagine-spark{position:relative;display:inline-block}
 .sparkle-star{
-  position:absolute;top:3px;left:50%;
-  transform:translateX(-50%);
-  width:6.421px;height:7.362px;
-  pointer-events:none;
+  position:absolute;top:3px;left:50%;transform:translateX(-50%);
+  width:6.421px;height:7.362px;pointer-events:none;
 }
 .title-wrap p{
-  font-size:24px;line-height:26px;color:var(--c0);
-  text-align:center;
+  font-size:24px;line-height:26px;color:var(--c0);text-align:center;
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 .t-light{font-weight:300;letter-spacing:-0.72px}
@@ -212,37 +174,36 @@ html,body{
 
 /* ── Gallery grid ────────────────────────────────────────── */
 .gallery{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
+  display:grid;grid-template-columns:repeat(2,164px);
   column-gap:14px;row-gap:12px;
   padding:0 24px;
 }
 .g-card{
-  position:relative;
-  width:164px;height:164px;
+  position:relative;width:164px;height:164px;
   border-radius:8px;overflow:hidden;
   background:#f0f0f0;cursor:pointer;
-  flex-shrink:0;
 }
 .g-card img{
-  width:100%;height:100%;object-fit:cover;display:block;
-  pointer-events:none;
+  width:100%;height:100%;object-fit:cover;display:block;pointer-events:none;
 }
-.g-card-tap{position:absolute;inset:0}
-.g-card:active .g-card-tap{background:rgba(0,0,0,.10)}
+.g-card:active{opacity:.88}
 
-/* New generated card: skeleton → loaded animation */
+/* Generated card entrance */
 .g-card.skeleton{background:linear-gradient(135deg,#e8e8e8,#d4d4d4)}
-@keyframes skelPulse{0%,100%{opacity:.6}50%{opacity:1}}
+@keyframes skelShimmer{
+  0%,100%{background-position:-200px 0}
+  50%{background-position:200px 0}
+}
 .g-card.skeleton::after{
   content:'';position:absolute;inset:0;
   background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.5) 50%,transparent 100%);
-  animation:skelPulse 1.2s ease infinite;
+  background-size:400px 100%;
+  animation:skelShimmer 1.4s ease infinite;
 }
 .g-card.loaded{animation:cardPop .42s cubic-bezier(0.34,1.56,0.64,1) both}
-@keyframes cardPop{from{transform:scale(0.88);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes cardPop{from{transform:scale(.88);opacity:0}to{transform:scale(1);opacity:1}}
 
-/* "Use" / "Explore" overlay button */
+/* Use / Explore overlay */
 .g-use-btn{
   position:absolute;bottom:8px;right:8px;
   display:flex;align-items:center;gap:4px;
@@ -250,34 +211,37 @@ html,body{
   background:rgba(0,4,9,.30);
   backdrop-filter:blur(2px);-webkit-backdrop-filter:blur(2px);
   border-radius:4px;border:none;cursor:pointer;
-  -webkit-tap-highlight-color:transparent;
 }
 .g-use-btn span{
   font-size:14px;font-weight:450;line-height:16px;color:#fff;
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
-/* ── Bottom gradient fade ─────────────────────────────────── */
+/* ── Bottom gradient ─────────────────────────────────────── */
 .fade-bottom{
-  position:absolute;left:0;right:0;bottom:0;
-  height:200px;
+  position:absolute;left:0;right:0;bottom:0;height:200px;
   background:linear-gradient(180deg,rgba(255,255,255,0) 30%,rgba(255,255,255,.75) 65%,#fff 85%);
   pointer-events:none;z-index:15;
 }
 
-/* ── Chat box ────────────────────────────────────────────── */
-.chat{
+/* ── Chat (same structure as prototype.html) ─────────────── */
+.chat-wrap{
   position:absolute;
-  left:calc(50% - 179px);width:358px;
-  bottom:24px;height:56px;
+  left:calc(50% - 179px);width:358px;bottom:24px;
+  z-index:25;
+}
+/* White chat box */
+.chat{
+  width:100%;height:56px;
   overflow:hidden;
   background:rgba(255,255,255,.96);
   border:1px solid white;
   border-radius:12px;
   box-shadow:var(--shadow-chat);
   backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
-  z-index:25;cursor:pointer;
-  transition:height .48s var(--ease),transform .38s var(--ease);
+  cursor:pointer;
+  transition:height .48s var(--ease);
+  position:relative;
 }
 .chat.expanded{height:200px;cursor:default}
 
@@ -290,16 +254,13 @@ html,body{
   display:flex;align-items:center;justify-content:center;
   z-index:3;pointer-events:none;
   transition:top .48s var(--ease);
-  flex-shrink:0;
 }
-.chat.expanded .chat-add{top:100px;pointer-events:auto;cursor:pointer}
+.chat.expanded .chat-add{top:100px;pointer-events:auto}
 
 /* Generating state label */
 .chat-gen-label{
-  position:absolute;inset:0;
-  display:block;
-  padding:0 56px 0 16px;
-  line-height:56px;
+  position:absolute;inset:0;display:block;
+  padding:0 56px 0 16px;line-height:56px;
   opacity:0;pointer-events:none;
   font-size:16px;font-weight:420;color:var(--c0);
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
@@ -315,10 +276,10 @@ html,body{
 .chat-hint{
   position:absolute;inset:0;display:flex;align-items:center;
   padding-left:52px;padding-right:12px;
-  opacity:1;transform:translateY(0);
-  transition:opacity .2s ease,transform .26s ease;cursor:pointer;
+  opacity:1;transition:opacity .2s ease,transform .26s ease;
+  cursor:pointer;
 }
-.chat.expanded .chat-hint{opacity:0;visibility:hidden;transform:translateY(-12px);pointer-events:none}
+.chat.expanded .chat-hint{opacity:0;visibility:hidden;pointer-events:none}
 .chat-hint-wrap{
   flex:1;overflow:hidden;display:flex;align-items:center;
   font-size:16px;font-weight:420;line-height:18px;color:var(--c1);
@@ -330,16 +291,37 @@ html,body{
   background:var(--hint-grad);
   -webkit-background-clip:text;-webkit-text-fill-color:transparent;
   background-clip:text;white-space:nowrap;
-  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+
+/* Reference image strip (shown in expanded state when photos attached) */
+.chat-ref-strip{
+  position:absolute;top:12px;left:52px;right:12px;height:56px;
+  display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;
+  opacity:0;pointer-events:none;
+  transition:opacity .22s ease 0s;
+}
+.chat-ref-strip::-webkit-scrollbar{display:none}
+.chat.expanded.has-refs .chat-ref-strip{opacity:1;pointer-events:auto;transition:opacity .22s ease .1s}
+.chat-ref-item{
+  position:relative;width:56px;height:56px;
+  border-radius:8px;overflow:hidden;flex-shrink:0;
+  background:#e5e6e6;
+}
+.chat-ref-item img{width:100%;height:100%;object-fit:cover;display:block}
+.chat-ref-close{
+  position:absolute;top:4px;right:4px;
+  width:18px;height:18px;background:rgba(0,4,9,.80);
+  border:none;border-radius:4px;
+  display:flex;align-items:center;justify-content:center;cursor:pointer;
 }
 
 /* Textarea */
 .chat-tx-area{
   position:absolute;top:12px;left:12px;right:12px;height:80px;
-  opacity:0;pointer-events:none;
-  transition:opacity .22s ease 0s;
+  opacity:0;pointer-events:none;transition:opacity .22s ease 0s;
 }
 .chat.expanded .chat-tx-area{opacity:1;pointer-events:auto;transition:opacity .22s ease .14s}
+.chat.expanded.has-refs .chat-tx-area{top:80px}
 .chat-tx{
   width:100%;height:100%;border:none;outline:none;resize:none;background:transparent;
   font-size:16px;line-height:20px;color:var(--c0);
@@ -371,65 +353,235 @@ html,body{
   transition:opacity .22s ease;
 }
 .chat.expanded .btn-create{opacity:1;pointer-events:auto;transition:opacity .22s ease .14s}
-.bc-label{
-  font-size:16px;font-weight:450;line-height:18px;color:white;
-  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
-}
+.bc-label{font-size:16px;font-weight:450;color:white;font-feature-settings:"ss01"1,"ss02"1,"ss06"1;}
 .bc-sep{width:1px;height:16px;background:rgba(255,255,255,.3);flex-shrink:0}
-.bc-credit-val{
-  font-size:16px;font-weight:450;line-height:18px;color:white;
-  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
-}
+.bc-credit-val{font-size:16px;font-weight:450;color:white;font-feature-settings:"ss01"1,"ss02"1,"ss06"1;}
 
-/* ── Toast ───────────────────────────────────────────────── */
+/* Disclaimer strip (below chat, overlaps by 10px) */
+.chat-disclaimer{
+  width:100%;height:44px;
+  background:#f7f7f8;
+  border-radius:0 0 8px 8px;
+  display:flex;align-items:flex-end;justify-content:center;
+  padding:0 10px 10px;
+  margin-top:-10px;
+  opacity:0;pointer-events:none;
+  transition:opacity .22s ease;
+  font-size:14px;font-weight:420;line-height:18px;color:var(--c1);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+  text-align:center;
+}
+.chat-wrap.expanded .chat-disclaimer{opacity:1}
+
+/* ── Toast (white, Figma spec) ───────────────────────────── */
+/*
+  Figma: 342×48px, bg=white, r=8, left:24px
+  Bottom: rect 263×3px = auto-dismiss progress bar
+*/
 .toast{
   position:absolute;
-  bottom:96px;left:50%;
-  transform:translateX(-50%) translateY(20px);
-  background:var(--c0);
-  border-radius:20px;
-  padding:8px 14px 8px 8px;
-  display:flex;align-items:center;gap:8px;
-  white-space:nowrap;z-index:30;
+  left:24px;right:24px;
+  bottom:80px;
+  background:white;
+  border-radius:8px;
+  height:48px;
+  box-shadow:0 4px 20px rgba(0,4,9,.12);
+  border:1px solid var(--stroke);
+  display:flex;align-items:center;
+  padding:0 12px;gap:12px;
+  z-index:30;
+  overflow:hidden;
   opacity:0;pointer-events:none;
+  transform:translateY(10px);
   transition:opacity .3s ease, transform .35s var(--ease);
 }
-.toast.visible{opacity:1;transform:translateX(-50%) translateY(0)}
-.toast-thumb{
-  width:28px;height:28px;border-radius:6px;
-  object-fit:cover;flex-shrink:0;background:linear-gradient(135deg,#d4f5e6,#a8e6cc);
-  overflow:hidden;
+.toast.visible{
+  opacity:1;pointer-events:auto;transform:translateY(0);
 }
-.toast-thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.toast span{
-  font-size:13px;font-weight:420;line-height:15px;color:white;
+.toast-info{
+  width:18px;height:18px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+}
+.toast-txt{
+  flex:1;
+  font-size:14px;font-weight:420;line-height:16px;color:var(--c0);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;white-space:nowrap;
+}
+.toast-close{
+  width:24px;height:24px;border:none;background:var(--icon-bg);
+  border-radius:6px;display:flex;align-items:center;justify-content:center;
+  flex-shrink:0;cursor:pointer;
+}
+/* 3px auto-dismiss progress bar at bottom of toast */
+.toast-bar{
+  position:absolute;bottom:0;left:0;height:3px;
+  background:var(--c0);border-radius:0;
+  width:100%;
+  transform-origin:left;transform:scaleX(1);
+}
+@keyframes toastDrain{to{transform:scaleX(0)}}
+.toast.visible .toast-bar{
+  animation:toastDrain 3s linear forwards;
+}
+
+/* ── Edit screen (Frame 6: image view + edit tools) ──────── */
+.edit-screen{
+  position:absolute;inset:0;
+  background:white;
+  z-index:60;
+  transform:translateX(100%);
+  transition:transform .45s var(--ease);
+  overflow:hidden;
+  display:flex;flex-direction:column;
+}
+.edit-screen.open{transform:translateX(0)}
+
+/* Edit header */
+.edit-header{
+  height:60px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:10px 16px 10px 8px;
+  background:white;z-index:2;
+}
+.edit-back{
+  width:40px;height:40px;border:none;background:transparent;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+}
+.edit-all-btn{
+  display:flex;align-items:center;gap:2px;
+  border:none;background:transparent;padding:0 4px;
+}
+.edit-all-btn span{
+  font-size:14px;font-weight:450;color:var(--c0);
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
-/* ── Full-screen preview ─────────────────────────────────── */
-.preview-overlay{
-  position:absolute;inset:0;
-  background:rgba(0,4,9,.85);
-  z-index:80;
+/* Edit scroll area */
+.edit-scroll{
+  flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch;
+  overscroll-behavior:contain;
+}
+
+/* Image frame: 382×382, r=8, 4px margin each side */
+.edit-img-wrap{
+  position:relative;margin:0 4px;
+  border-radius:8px;overflow:hidden;
+  background:#f0f0f0;
+}
+.edit-img-wrap img{
+  width:100%;aspect-ratio:1;object-fit:cover;display:block;
+}
+.edit-heart{
+  position:absolute;top:12px;right:12px;
+  width:24px;height:24px;border:none;border-radius:4px;background:transparent;
   display:flex;align-items:center;justify-content:center;
-  opacity:0;pointer-events:none;
-  transition:opacity .28s ease;
+  cursor:pointer;
 }
-.preview-overlay.open{opacity:1;pointer-events:auto}
-.preview-img{
-  width:calc(100% - 48px);
-  max-height:80%;
-  object-fit:contain;
-  border-radius:12px;
-  transform:scale(0.92);
-  transition:transform .32s cubic-bezier(0.34,1.2,0.64,1);
+
+/* Prompt strip below image */
+.edit-prompt-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin:0 4px;padding:0 12px;height:42px;
+  background:var(--icon-bg);
+  border-radius:0 0 8px 8px;
+  border-top:1px solid var(--stroke);
 }
-.preview-overlay.open .preview-img{transform:scale(1)}
-.preview-close{
-  position:absolute;top:20px;right:20px;
-  width:36px;height:36px;border:none;
-  background:rgba(255,255,255,.12);
-  border-radius:50%;display:flex;align-items:center;justify-content:center;
+.edit-prompt-txt{
+  flex:1;min-width:0;
+  font-size:14px;font-weight:420;line-height:16px;color:var(--c1);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+  padding-right:12px;
+}
+.edit-use-btn{
+  font-size:14px;font-weight:450;color:var(--c0);
+  border:none;background:none;flex-shrink:0;cursor:pointer;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+  text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px;
+}
+
+/* Headshots horizontal scroll */
+.edit-headshots{
+  display:flex;gap:8px;
+  padding:12px 8px 12px;
+  overflow-x:auto;-webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+}
+.edit-headshots::-webkit-scrollbar{display:none}
+.edit-hs-item{
+  width:48px;height:48px;border-radius:4px;
+  object-fit:cover;flex-shrink:0;background:#e5e6e6;
+  cursor:pointer;transition:opacity .15s ease;
+}
+.edit-hs-item.selected{
+  outline:2px solid var(--c0);outline-offset:2px;
+  width:60px;height:60px;border-radius:4px;
+}
+.edit-hs-item:active{opacity:.8}
+
+/* Download CTA + action row container */
+.edit-actions{
+  padding:12px 24px 0;flex-shrink:0;background:white;
+}
+.edit-download{
+  width:100%;height:48px;
+  background:var(--c0);border:none;border-radius:8px;
+  display:flex;align-items:center;justify-content:center;
+  gap:12px;cursor:pointer;
+  box-shadow:inset 0 2px 2px rgba(255,255,255,.2);
+}
+.edit-download-label{
+  font-size:16px;font-weight:450;color:white;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+.edit-dl-sep{width:1px;height:16px;background:rgba(255,255,255,.3);flex-shrink:0}
+.edit-dl-credit{
+  font-size:16px;font-weight:450;color:white;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+
+/* Action row: Edit / More Like This / Get High Res / Share / More */
+.edit-nav-row{
+  display:flex;justify-content:space-between;
+  padding:6px 0 12px;
+}
+.edit-nav-item{
+  display:flex;flex-direction:column;align-items:center;gap:8px;
+  cursor:pointer;flex:1;border:none;background:none;padding:6px 0;
+  -webkit-tap-highlight-color:transparent;
+}
+.edit-nav-icon{
+  width:16px;height:16px;display:flex;align-items:center;justify-content:center;
+}
+.edit-nav-label{
+  font-size:12px;font-weight:450;color:var(--c0);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;white-space:nowrap;
+}
+
+/* Edit tools section (scrolls into view) */
+.edit-tools-section{
+  padding:0 24px 24px;border-top:1px solid var(--stroke);margin-top:8px;
+}
+.edit-tools-title{
+  font-size:24px;font-weight:450;line-height:1.08;color:var(--c0);
+  padding:20px 0 16px;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+.edit-tools-chips{
+  display:flex;flex-wrap:wrap;gap:8px;
+}
+.edit-chip{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 12px;
+  background:var(--icon-bg);
+  border-radius:100px;border:none;cursor:pointer;
+  -webkit-tap-highlight-color:transparent;
+  transition:background .15s ease;
+}
+.edit-chip:active{background:#e0e1e1}
+.edit-chip span{
+  font-size:12px;font-weight:420;color:var(--c0);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
 </style>
@@ -446,137 +598,298 @@ html,body{
       </svg>
     </button>
     <div class="credits-badge">
-      <div class="credits-icon">
-        <!-- Diamond / credits icon -->
-        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-          <ellipse cx="8" cy="8" rx="6.4" ry="6.4" fill="#EDF66E"/>
-          <path d="M8 5.33l1.78 2.45L11.5 8 9.78 9.22 8 11.67 6.22 9.22 4.5 8l1.72-1.22L8 5.33Z" fill="#000409" stroke="none"/>
-        </svg>
-      </div>
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <ellipse cx="8" cy="8" rx="6.4" ry="6.4" fill="#EDF66E"/>
+        <path d="M8 4.8L9.6 7.2 11.2 8 9.6 8.8 8 11.2 6.4 8.8 4.8 8l1.6-0.8z" fill="#000409"/>
+      </svg>
       <span class="credits-num">23</span>
     </div>
   </header>
 
-  <!-- ── Status bar (v2) ────────────────────────────────────── -->
+  <!-- ── Status bar ─────────────────────────────────────────── -->
   <div class="v2-status" id="v2Status">
     <div class="v2-pill" id="v2Pill">
-
-      <!-- Creating state -->
       <div class="v2-creating" id="v2Creating">
         <div class="v2-spin"></div>
         <span>Creating...</span>
       </div>
-
-      <!-- Expanded state -->
       <div class="v2-exp" id="v2Exp">
         <div class="v2-thumbs">
           <img class="v2-th v2-th-back" id="v2ThBack" src="./photos/photo-1.jpg" alt="">
           <img class="v2-th v2-th-front" id="v2ThFront" src="./photos/photo-2.png" alt="">
         </div>
-        <span class="v2-exp-txt" id="v2ExpTxt">1 images created</span>
+        <span class="v2-exp-txt">1 images created</span>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
           <path d="M3 5l4 4 4-4" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>
       </div>
-
-      <!-- Condensed state -->
       <div class="v2-cond" id="v2Cond">
         <span class="v2-cond-num" id="v2CndNum">1</span>
-        <div class="v2-cond-bar">
-          <div class="v2-cond-fill" id="v2CndFill"></div>
-        </div>
+        <div class="v2-cond-bar"><div class="v2-cond-fill"></div></div>
       </div>
-
     </div>
   </div>
 
-  <!-- ── Scrollable content ─────────────────────────────────── -->
+  <!-- ── Main scroll ─────────────────────────────────────────── -->
   <div class="scroll" id="mainScroll">
     <div class="hdr-spacer"></div>
-
-    <!-- Title -->
     <div class="title-wrap">
-      <p class="t-light">Imag<span class="imagine-spark"><!-- sparkle -->
+      <p class="t-light">Imag<span class="imagine-spark">
         <svg class="sparkle-star" width="6.421" height="7.362" viewBox="0 0 7 8" fill="none">
           <path d="M4.32982 0.274772C4.33345 -0.0143606 3.99931 -0.103894 3.84704 0.145412L3.16701 1.24957C2.76352 1.90422 2.11563 2.32781 1.42909 2.38585L0.271406 2.48321C0.0103042 2.50523 -0.100782 2.88586 0.110906 3.03315L1.04795 3.6918C1.60349 4.08264 1.92807 4.76681 1.91864 5.52705L1.90228 6.80904C1.89864 7.09817 2.23279 7.1877 2.38505 6.9384L3.06509 5.83424C3.46858 5.17959 4.11647 4.75599 4.80301 4.69796L5.95877 4.59867C6.21987 4.57665 6.33096 4.19602 6.11927 4.04873L5.18223 3.39008C4.62669 2.99924 4.3021 2.31507 4.31154 1.55483L4.32982 0.274772Z" fill="#56CBA4"/>
         </svg>i</span>ne yourself in</p>
       <p class="t-medium">Any look. Any place <span class="t-cursor">|</span></p>
     </div>
-
-    <!-- Gallery grid -->
     <div class="gallery" id="gallery"></div>
-
-    <div style="height:120px"></div>
+    <div style="height:140px"></div>
   </div>
 
   <!-- Bottom gradient -->
   <div class="fade-bottom"></div>
 
-  <!-- ── Chat box ───────────────────────────────────────────── -->
-  <div class="chat" id="chat" onclick="handleChatClick(event)">
+  <!-- ── Chat wrap (box + disclaimer) ──────────────────────── -->
+  <div class="chat-wrap" id="chatWrap">
 
-    <button class="chat-add" id="chatAdd" onclick="handleChatAdd(event)">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <path d="M1.666 8H14.333" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-        <path d="M8 14.333V1.667" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+    <div class="chat" id="chat" onclick="handleChatClick(event)">
+
+      <button class="chat-add" id="chatAdd" onclick="handleChatAdd(event)">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M1.666 8H14.333" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M8 14.333V1.667" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+
+      <div class="chat-gen-label" id="chatGenLabel"></div>
+
+      <div class="chat-hint" id="chatHint">
+        <div class="chat-hint-wrap">
+          <span style="margin-right:3px">Create a picture of me</span>
+          <div class="chat-hint-rolling">
+            <span class="hint-item" id="hintText">as superhero</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reference images strip (simulated: appears when + tapped) -->
+      <div class="chat-ref-strip" id="chatRefStrip">
+        <div class="chat-ref-item">
+          <img src="./photos/photo-1.jpg" alt="">
+          <button class="chat-ref-close" onclick="event.stopPropagation();removeRef(0)">
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+              <path d="M1 1l6 6M7 1L1 7" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="chat-ref-item">
+          <img src="./photos/photo-2.png" alt="">
+          <button class="chat-ref-close" onclick="event.stopPropagation();removeRef(1)">
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+              <path d="M1 1l6 6M7 1L1 7" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="chat-ref-item">
+          <img src="./photos/photo-1.jpg" alt="">
+          <button class="chat-ref-close" onclick="event.stopPropagation();removeRef(2)">
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+              <path d="M1 1l6 6M7 1L1 7" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+        <div class="chat-ref-item">
+          <img src="./photos/photo-2.png" alt="">
+          <button class="chat-ref-close" onclick="event.stopPropagation();removeRef(3)">
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none">
+              <path d="M1 1l6 6M7 1L1 7" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+
+      <div class="chat-tx-area" id="chatTxArea">
+        <textarea class="chat-tx" id="chatTx" rows="3"
+          placeholder="Describe your look…"
+          oninput="onTxInput()"></textarea>
+      </div>
+
+      <div class="chat-dice" id="chatDice" onclick="event.stopPropagation();rollDice()">
+        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <g clip-path="url(#dp)">
+            <path d="M11.5557 10.9219C11.4515 10.9219 11.3663 11.0063 11.3662 11.1104C11.3662 11.2145 11.4515 11.2998 11.5557 11.2998C11.6598 11.2997 11.7441 11.2145 11.7441 11.1104C11.744 11.0063 11.6597 10.922 11.5557 10.9219Z" fill="#000409" stroke="#000409" stroke-width="1.4"/>
+            <path d="M7.55566 6.92188C7.45153 6.92188 7.36633 7.00625 7.36621 7.11035C7.36621 7.21455 7.45146 7.2998 7.55566 7.2998C7.65977 7.29969 7.74414 7.21448 7.74414 7.11035C7.74402 7.00633 7.6597 6.92199 7.55566 6.92188Z" fill="#000409" stroke="#000409" stroke-width="1.4"/>
+            <path d="M9.55545 9.99946C9.06478 9.99946 8.66656 9.6015 8.66656 9.11057C8.66656 8.61964 9.06478 8.22168 9.55545 8.22168C10.0461 8.22168 10.4443 8.61964 10.4443 9.11057C10.4443 9.6015 10.0461 9.99946 9.55545 9.99946Z" fill="#000409"/>
+            <path d="M12.6666 13.9995H6.44434C5.46212 13.9995 4.66656 13.2035 4.66656 12.2217V5.99946C4.66656 5.01759 5.46212 4.22168 6.44434 4.22168H12.6666C13.6488 4.22168 14.4443 5.01759 14.4443 5.99946V12.2217C14.4443 13.2035 13.6488 13.9995 12.6666 13.9995Z" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M2.44406 9.91578L1.57473 4.0661C1.43073 3.09454 2.10095 2.19054 3.07162 2.04654L9.22628 1.13098C9.96974 1.02023 10.6732 1.38663 11.0273 2.00032" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          </g>
+          <defs><clipPath id="dp"><rect width="16" height="16" fill="white"/></clipPath></defs>
+        </svg>
+      </div>
+
+      <button class="btn-create" id="btnCreate" onclick="handleCreate(event)">
+        <span class="bc-label">Create</span>
+        <div class="bc-sep"></div>
+        <!-- sparkle icon -->
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <ellipse cx="8" cy="8" rx="6.4" ry="6.4" stroke="white" stroke-width="1.4"/>
+          <path d="M8 5.2l1.4 1.8 1.8.6-1.2 1.4.2 1.8L8 10 6.8 10.8l.2-1.8L5.8 7.6l1.8-.6z" fill="white"/>
+        </svg>
+        <span class="bc-credit-val">1</span>
+      </button>
+
+    </div><!-- end .chat -->
+
+    <!-- Disclaimer (below chat, overlaps by 10px per Figma) -->
+    <div class="chat-disclaimer" id="chatDisclaimer">
+      Please remember Imagine is AI &amp; can make mistakes.
+    </div>
+
+  </div><!-- end .chat-wrap -->
+
+  <!-- ── Toast (white, 342px, left:24px, bottom:80px) ──────── -->
+  <div class="toast" id="toast">
+    <div class="toast-info">
+      <!-- info circle icon -->
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
+        <circle cx="9" cy="9" r="7.25" stroke="#000409" stroke-width="1.4"/>
+        <path d="M9 8v5" stroke="#000409" stroke-width="1.4" stroke-linecap="round"/>
+        <circle cx="9" cy="5.5" r="1" fill="#000409"/>
+      </svg>
+    </div>
+    <span class="toast-txt">Created image added to Gallery</span>
+    <button class="toast-close" onclick="dismissToast()">
+      <svg width="10" height="10" viewBox="0 0 10 10" fill="none">
+        <path d="M1 1l8 8M9 1L1 9" stroke="#000409" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
     </button>
+    <div class="toast-bar" id="toastBar"></div>
+  </div>
 
-    <div class="chat-gen-label" id="chatGenLabel"></div>
+  <!-- ── Edit screen (Frame 6: image view + edit) ───────────── -->
+  <div class="edit-screen" id="editScreen">
+    <div class="edit-header">
+      <button class="edit-back" onclick="closeEdit()">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+          <path d="M5.5 12h13M10 7l-5 5 5 5" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+      <button class="edit-all-btn">
+        <span>All</span>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+          <path d="M3 5l4 4 4-4" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
+    </div>
 
-    <div class="chat-hint" id="chatHint">
-      <div class="chat-hint-wrap">
-        <span style="margin-right:3px">Create a picture of me</span>
-        <div class="chat-hint-rolling" id="hintRoller">
-          <span class="hint-item" id="hintText">as superhero</span>
+    <div class="edit-scroll" id="editScroll">
+      <!-- Large image -->
+      <div class="edit-img-wrap" id="editImgWrap">
+        <img id="editImg" src="" alt="">
+        <button class="edit-heart">
+          <svg width="20" height="18" viewBox="0 0 20 18" fill="none">
+            <path d="M10 16.5C10 16.5 1.5 11 1.5 5.5C1.5 3.02 3.52 1 6 1C7.63 1 9.06 1.88 10 3.2C10.94 1.88 12.37 1 14 1C16.48 1 18.5 3.02 18.5 5.5C18.5 11 10 16.5 10 16.5Z" stroke="white" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </button>
+      </div>
+
+      <!-- Prompt strip -->
+      <div class="edit-prompt-bar">
+        <span class="edit-prompt-txt" id="editPromptTxt">Create a picture of me in a christmas hoodie against a beige...</span>
+        <button class="edit-use-btn">Use</button>
+      </div>
+
+      <!-- Headshots horizontal scroll -->
+      <div class="edit-headshots" id="editHeadshots">
+        <!-- Injected by JS -->
+      </div>
+
+      <!-- Edit tools section -->
+      <div class="edit-tools-section">
+        <div class="edit-tools-title">Edit your headshot</div>
+        <div class="edit-tools-chips">
+          <button class="edit-chip"><span>Outfit</span></button>
+          <button class="edit-chip"><span>Backdrop</span></button>
+          <button class="edit-chip"><span>Magic Eraser</span></button>
+          <button class="edit-chip"><span>Magic Edit</span></button>
+          <button class="edit-chip"><span>Hair Style</span></button>
+          <button class="edit-chip"><span>Hair Colour</span></button>
+          <button class="edit-chip"><span>Headgear</span></button>
+          <button class="edit-chip"><span>Eyewear</span></button>
+          <button class="edit-chip"><span>Expression</span></button>
+          <button class="edit-chip"><span>Correct Eye Gaze</span></button>
+          <button class="edit-chip"><span>Remove Wrinkles</span></button>
+          <button class="edit-chip"><span>Remove Jewellery</span></button>
+          <button class="edit-chip"><span>Eye Color</span></button>
         </div>
       </div>
     </div>
 
-    <div class="chat-tx-area" id="chatTxArea">
-      <textarea class="chat-tx" id="chatTx" rows="3" placeholder="Describe your look…" oninput="onTxInput()"></textarea>
+    <!-- Download + action row (fixed at bottom of edit screen) -->
+    <div class="edit-actions">
+      <button class="edit-download">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <path d="M8 2v9M4 8l4 4 4-4" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+          <path d="M2 14h12" stroke="white" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <span class="edit-download-label">Download</span>
+        <div class="edit-dl-sep"></div>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+          <ellipse cx="8" cy="8" rx="6.4" ry="6.4" fill="#EDF66E"/>
+          <path d="M8 4.8L9.6 7.2 11.2 8 9.6 8.8 8 11.2 6.4 8.8 4.8 8l1.6-0.8z" fill="#000409"/>
+        </svg>
+        <span class="edit-dl-credit">1</span>
+      </button>
+      <div class="edit-nav-row">
+        <button class="edit-nav-item">
+          <div class="edit-nav-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M2 12.5L11 3.5L12.5 5L3.5 14H2V12.5Z" stroke="#000409" stroke-width="1.3" stroke-linejoin="round"/>
+              <path d="M9.5 5L11 6.5" stroke="#000409" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="edit-nav-label">Edit</span>
+        </button>
+        <button class="edit-nav-item">
+          <div class="edit-nav-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="5" cy="8" r="3" stroke="#000409" stroke-width="1.3"/>
+              <path d="M9 4h5M9 8h5M9 12h5" stroke="#000409" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="edit-nav-label">More Like This</span>
+        </button>
+        <button class="edit-nav-item">
+          <div class="edit-nav-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <rect x="2" y="2" width="12" height="12" rx="2" stroke="#000409" stroke-width="1.3"/>
+              <path d="M5 8l2 2 4-4" stroke="#000409" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+          <span class="edit-nav-label">Get High Res</span>
+        </button>
+        <button class="edit-nav-item">
+          <div class="edit-nav-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="12" cy="4" r="2" stroke="#000409" stroke-width="1.3"/>
+              <circle cx="4" cy="8" r="2" stroke="#000409" stroke-width="1.3"/>
+              <circle cx="12" cy="12" r="2" stroke="#000409" stroke-width="1.3"/>
+              <path d="M6 7l4-2M6 9l4 2" stroke="#000409" stroke-width="1.3" stroke-linecap="round"/>
+            </svg>
+          </div>
+          <span class="edit-nav-label">Share</span>
+        </button>
+        <button class="edit-nav-item">
+          <div class="edit-nav-icon">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <circle cx="8" cy="4" r="1.5" fill="#000409"/>
+              <circle cx="8" cy="8" r="1.5" fill="#000409"/>
+              <circle cx="8" cy="12" r="1.5" fill="#000409"/>
+            </svg>
+          </div>
+          <span class="edit-nav-label">More</span>
+        </button>
+      </div>
     </div>
-
-    <div class="chat-dice" id="chatDice" onclick="event.stopPropagation();rollDice()">
-      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
-        <g clip-path="url(#dp)">
-          <path d="M11.5557 10.9219C11.4515 10.9219 11.3663 11.0063 11.3662 11.1104C11.3662 11.2145 11.4515 11.2998 11.5557 11.2998C11.6598 11.2997 11.7441 11.2145 11.7441 11.1104C11.744 11.0063 11.6597 10.922 11.5557 10.9219Z" fill="#000409" stroke="#000409" stroke-width="1.4"/>
-          <path d="M7.55566 6.92188C7.45153 6.92188 7.36633 7.00625 7.36621 7.11035C7.36621 7.21455 7.45146 7.2998 7.55566 7.2998C7.65977 7.29969 7.74414 7.21448 7.74414 7.11035C7.74402 7.00633 7.6597 6.92199 7.55566 6.92188Z" fill="#000409" stroke="#000409" stroke-width="1.4"/>
-          <path d="M9.55545 9.99946C9.06478 9.99946 8.66656 9.6015 8.66656 9.11057C8.66656 8.61964 9.06478 8.22168 9.55545 8.22168C10.0461 8.22168 10.4443 8.61964 10.4443 9.11057C10.4443 9.6015 10.0461 9.99946 9.55545 9.99946Z" fill="#000409"/>
-          <path d="M12.6666 13.9995H6.44434C5.46212 13.9995 4.66656 13.2035 4.66656 12.2217V5.99946C4.66656 5.01759 5.46212 4.22168 6.44434 4.22168H12.6666C13.6488 4.22168 14.4443 5.01759 14.4443 5.99946V12.2217C14.4443 13.2035 13.6488 13.9995 12.6666 13.9995Z" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-          <path d="M2.44406 9.91578L1.57473 4.0661C1.43073 3.09454 2.10095 2.19054 3.07162 2.04654L9.22628 1.13098C9.96974 1.02023 10.6732 1.38663 11.0273 2.00032" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-        </g>
-        <defs><clipPath id="dp"><rect width="16" height="16" fill="white"/></clipPath></defs>
-      </svg>
-    </div>
-
-    <button class="btn-create" id="btnCreate" onclick="handleCreate(event)">
-      <span class="bc-label">Create</span>
-      <div class="bc-sep"></div>
-      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 16 16" fill="none">
-        <circle cx="8" cy="8" r="6.4" stroke="white" stroke-width="1.4"/>
-        <path d="M7.686 5.648L5.648 7.686a.457.457 0 000 .628l2.038 2.038a.457.457 0 00.628 0l2.038-2.038a.457.457 0 000-.628L8.314 5.648a.457.457 0 00-.628 0Z" stroke="white" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
-      <span class="bc-credit-val">1</span>
-    </button>
-
-  </div><!-- end .chat -->
-
-  <!-- ── Toast ─────────────────────────────────────────────── -->
-  <div class="toast" id="toast">
-    <div class="toast-thumb" id="toastThumb"></div>
-    <span>Created image added to Gallery</span>
-  </div>
-
-  <!-- ── Preview overlay ───────────────────────────────────── -->
-  <div class="preview-overlay" id="previewOverlay" onclick="closePreview()">
-    <img class="preview-img" id="previewImg" src="" alt="">
-    <button class="preview-close" onclick="closePreview()">
-      <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <path d="M1 1l12 12M13 1L1 13" stroke="white" stroke-width="1.5" stroke-linecap="round"/>
-      </svg>
-    </button>
-  </div>
+  </div><!-- end .edit-screen -->
 
 </div><!-- end .screen -->
 </div><!-- end .phone -->
@@ -584,29 +897,32 @@ html,body{
 <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script>
 
-// ── Refs ─────────────────────────────────────────────────────────
+// ── Refs ──────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 const mainScroll   = $('mainScroll');
 const chat         = $('chat');
+const chatWrap     = $('chatWrap');
 const chatTx       = $('chatTx');
 const chatGenLabel = $('chatGenLabel');
-const btnCreate    = $('btnCreate');
 const v2Pill       = $('v2Pill');
 const v2Creating   = $('v2Creating');
 const v2Exp        = $('v2Exp');
 const v2Cond       = $('v2Cond');
 const toast        = $('toast');
 const gallery      = $('gallery');
-const previewOverlay = $('previewOverlay');
-const previewImg     = $('previewImg');
+const editScreen   = $('editScreen');
+const editImg      = $('editImg');
+const editHeadshots= $('editHeadshots');
 
 // ── State ─────────────────────────────────────────────────────────
 const S = {
   chatOpen: false,
   promptText: '',
-  statusPhase: 'hidden',  // hidden | creating | expanded | condensed
+  statusPhase: 'hidden',   // hidden | creating | expanded | condensed
   genCount: 0,
-  genImages: [],          // srcs of generated images (for thumbnails)
+  lastGenSrc: '',
+  lastPrompt: '',
+  condenseOnScroll: false,
 };
 
 // ── Data ──────────────────────────────────────────────────────────
@@ -628,60 +944,43 @@ const PROMPTS = [
   'as a barista in a cozy New York coffee shop',
 ];
 const HINTS = ['as superhero','in a black tuxedo','as an artist','in Tokyo at night','at a beach wedding','as a chef','in the Himalayas','at golden hour'];
-const GENERATED_IMGS = ['./photos/generated-01.png','./photos/generated-02.png'];
+const GEN_IMGS = ['./photos/generated-01.png','./photos/generated-02.png'];
 
 let hintIdx = 0, hintTimer;
 let diceSpinning = false;
-let genTimer1, genTimer2, genTimer3, toastTimer;
-let condenseOnScroll = false;
+let toastTimer, toastBarAnimId;
+let genTimer1, genTimer2, genTimer3;
 
 // ── Gallery ───────────────────────────────────────────────────────
 function buildGallery() {
   gallery.innerHTML = '';
   PHOTOS.forEach((src, i) => {
-    const btn = i === 5 ? 'Explore' : 'Use';
+    const label = i === 5 ? 'Explore' : 'Use';
     const card = document.createElement('div');
     card.className = 'g-card';
     card.innerHTML = `
-      <img src="${src}" loading="lazy" draggable="false"/>
-      <div class="g-card-tap"></div>
-      <button class="g-use-btn" onclick="event.stopPropagation();useCard('${src}')">
-        <span>${btn}</span>
-      </button>
+      <img src="${src}" loading="lazy" draggable="false">
+      <button class="g-use-btn" onclick="event.stopPropagation()"><span>${label}</span></button>
     `;
-    card.addEventListener('click', () => openPreview(src));
+    card.addEventListener('click', () => openEdit(src, ''));
     gallery.appendChild(card);
   });
 }
 
-function useCard(src) {
-  collapsePrompt();
-  expandPromptWithText('Create a picture like this…');
-}
-
-function prependGeneratedCard(src) {
+function prependGeneratedCard(src, prompt) {
   const card = document.createElement('div');
   card.className = 'g-card skeleton';
-  card.innerHTML = `<div class="g-card-tap"></div>`;
   gallery.prepend(card);
-
-  // Swap to loaded image after short delay
   setTimeout(() => {
     card.innerHTML = `
-      <img src="${src}" draggable="false"/>
-      <div class="g-card-tap"></div>
-      <button class="g-use-btn" onclick="event.stopPropagation()">
-        <span>Use</span>
-      </button>
+      <img src="${src}" draggable="false">
+      <button class="g-use-btn" onclick="event.stopPropagation()"><span>Use</span></button>
     `;
     card.classList.remove('skeleton');
     card.classList.add('loaded');
-    card.querySelector('img').addEventListener('click', e => {
-      e.stopPropagation();
-      openPreview(src);
-    });
-    card.addEventListener('click', () => openPreview(src));
-  }, 800);
+    card.querySelector('img').onload = null;
+    card.addEventListener('click', () => openEdit(src, prompt));
+  }, 700);
 }
 
 // ── Hint cycle ────────────────────────────────────────────────────
@@ -713,28 +1012,29 @@ function handleChatClick(e) {
 }
 function handleChatAdd(e) {
   e.stopPropagation();
-  expandPrompt();
+  if (!S.chatOpen) {
+    expandPrompt();
+    // After expand, show refs (simulate photo selection)
+    setTimeout(() => {
+      chat.classList.add('has-refs');
+    }, 100);
+  } else {
+    chat.classList.toggle('has-refs');
+  }
 }
 
 function expandPrompt() {
   S.chatOpen = true;
   chat.classList.add('expanded');
+  chatWrap.classList.add('expanded');
   clearInterval(hintTimer);
   setTimeout(() => chatTx.focus(), 80);
 }
 
-function expandPromptWithText(txt) {
-  chatTx.value = txt;
-  S.promptText = txt;
-  S.chatOpen = true;
-  chat.classList.add('expanded');
-  clearInterval(hintTimer);
-}
-
 function collapsePrompt() {
   S.chatOpen = false;
-  chat.classList.remove('expanded');
-  chat.style.transform = '';
+  chat.classList.remove('expanded','has-refs');
+  chatWrap.classList.remove('expanded');
   chatTx.blur();
   startHintCycle();
 }
@@ -746,11 +1046,6 @@ function onTxInput() {
 function rollDice() {
   if (diceSpinning) return;
   diceSpinning = true;
-  const svg = document.querySelector('#chatDice svg');
-  svg.style.transition = 'transform .3s ease';
-  svg.style.transform = 'rotate(180deg)';
-  setTimeout(() => { svg.style.transform = 'rotate(0deg)'; }, 320);
-  setTimeout(() => { diceSpinning = false; }, 350);
   const idx = Math.floor(Math.random() * PROMPTS.length);
   chatTx.style.opacity = '0';
   setTimeout(() => {
@@ -759,159 +1054,166 @@ function rollDice() {
     chatTx.style.opacity = '1';
     S.promptText = PROMPTS[idx];
     onTxInput();
+    setTimeout(() => { diceSpinning = false; }, 200);
   }, 160);
+}
+
+function removeRef(idx) {
+  const strips = $('chatRefStrip').querySelectorAll('.chat-ref-item');
+  if (strips[idx]) strips[idx].remove();
+  if ($('chatRefStrip').children.length === 0) {
+    chat.classList.remove('has-refs');
+  }
 }
 
 function handleCreate(e) {
   if (e) e.stopPropagation();
-  const prompt = (S.promptText || chatTx.value || '').trim();
-  if (!prompt) return;
-
-  // Collapse chat → generating state
+  const prompt = (chatTx.value || '').trim() || 'Create a picture of me in a Santa Claus costume with a cozy red cap, holiday vibes';
+  S.lastPrompt = prompt;
   S.chatOpen = false;
   chatGenLabel.textContent = prompt;
-  chat.classList.remove('expanded');
+  chat.classList.remove('expanded','has-refs');
+  chatWrap.classList.remove('expanded');
   chat.classList.add('generating');
   chatTx.value = '';
   S.promptText = '';
   clearInterval(hintTimer);
-
-  // Start generation flow
   startGeneration(prompt);
 }
 
 // ── Generation flow ───────────────────────────────────────────────
 function startGeneration(prompt) {
   S.statusPhase = 'creating';
-
-  // Step 1: show creating pill sliding from header
   showCreatingPill();
 
-  // Step 2: after 2.5s — morph to expanded
   genTimer1 = setTimeout(() => {
-    const genSrc = GENERATED_IMGS[S.genCount % GENERATED_IMGS.length];
+    const src = GEN_IMGS[S.genCount % GEN_IMGS.length];
     S.genCount++;
-    S.genImages.unshift(genSrc);
-    morphToExpanded(genSrc);
+    S.lastGenSrc = src;
+    morphToExpanded(src);
 
-    // Add image to grid
-    setTimeout(() => prependGeneratedCard(genSrc), 200);
-
-    // Toast
-    genTimer2 = setTimeout(() => showToast(genSrc), 600);
-
-    // Reset chat after a moment
+    setTimeout(() => prependGeneratedCard(src, prompt), 200);
+    genTimer2 = setTimeout(() => showToast(), 500);
     genTimer3 = setTimeout(() => {
       chat.classList.remove('generating');
       startHintCycle();
-    }, 800);
-
+    }, 700);
   }, 2500);
 }
 
-// ── Status bar animation ──────────────────────────────────────────
+// ── Status bar ────────────────────────────────────────────────────
 function showCreatingPill() {
-  // Reset to creating state
   setStatusContent('creating');
   gsap.set(v2Pill, { width: 113, height: 36, opacity: 1, y: -36 });
-  gsap.to(v2Pill, {
-    y: 0,
-    duration: 0.55,
-    ease: 'back.out(1.3)',
-  });
+  gsap.to(v2Pill, { y: 0, duration: 0.55, ease: 'back.out(1.3)' });
 }
 
-function morphToExpanded(imgSrc) {
+function morphToExpanded(src) {
   S.statusPhase = 'expanded';
-  condenseOnScroll = true;
-
-  // Update thumbnail
-  $('v2ThFront').src = imgSrc;
-  $('v2ThBack').src = PHOTOS[0];
-
-  // Crossfade content
+  S.condenseOnScroll = true;
+  $('v2ThFront').src = src;
   gsap.to(v2Creating, { opacity: 0, duration: 0.18, onComplete: () => {
     setStatusContent('expanded');
     gsap.fromTo(v2Exp, { opacity: 0 }, { opacity: 1, duration: 0.22 });
   }});
-
-  // Morph pill width
-  gsap.to(v2Pill, {
-    width: 214,
-    duration: 0.52,
-    ease: 'back.out(1.4)',
-  });
+  gsap.to(v2Pill, { width: 214, duration: 0.52, ease: 'back.out(1.4)' });
+  v2Pill.classList.add('active');
+  v2Pill.onclick = () => openEdit(S.lastGenSrc, S.lastPrompt);
 }
 
 function condenseStatus() {
   if (S.statusPhase !== 'expanded') return;
   S.statusPhase = 'condensed';
-
   gsap.to(v2Exp, { opacity: 0, duration: 0.14, onComplete: () => {
     setStatusContent('condensed');
     gsap.fromTo(v2Cond, { opacity: 0 }, { opacity: 1, duration: 0.18 });
   }});
-
-  gsap.to(v2Pill, {
-    width: 88,
-    height: 28,
-    duration: 0.38,
-    ease: 'power3.inOut',
-  });
+  gsap.to(v2Pill, { width: 88, height: 28, duration: 0.38, ease: 'power3.inOut' });
 }
 
 function expandStatus() {
   if (S.statusPhase !== 'condensed') return;
   S.statusPhase = 'expanded';
-
   gsap.to(v2Cond, { opacity: 0, duration: 0.14, onComplete: () => {
     setStatusContent('expanded');
     gsap.fromTo(v2Exp, { opacity: 0 }, { opacity: 1, duration: 0.18 });
   }});
-
-  gsap.to(v2Pill, {
-    width: 214,
-    height: 36,
-    duration: 0.42,
-    ease: 'back.out(1.3)',
-  });
+  gsap.to(v2Pill, { width: 214, height: 36, duration: 0.42, ease: 'back.out(1.3)' });
 }
 
 function setStatusContent(state) {
   v2Creating.style.display = state === 'creating' ? 'flex' : 'none';
   v2Exp.style.display      = state === 'expanded'  ? 'flex' : 'none';
   v2Cond.style.display     = state === 'condensed' ? 'flex' : 'none';
-
-  if (state === 'creating') {
-    gsap.set(v2Creating, { opacity: 1 });
-  }
+  if (state === 'creating') gsap.set(v2Creating, { opacity: 1 });
 }
 
-// ── Scroll: condense / expand status ─────────────────────────────
+// ── Scroll → condense/expand ──────────────────────────────────────
 mainScroll.addEventListener('scroll', () => {
-  if (!condenseOnScroll) return;
+  if (!S.condenseOnScroll) return;
   const st = mainScroll.scrollTop;
   if (st > 24 && S.statusPhase === 'expanded') condenseStatus();
   if (st < 8  && S.statusPhase === 'condensed') expandStatus();
 }, { passive: true });
 
-// ── Toast ─────────────────────────────────────────────────────────
-function showToast(src) {
-  const thumb = $('toastThumb');
-  thumb.innerHTML = src ? `<img src="${src}" style="width:100%;height:100%;object-fit:cover;border-radius:6px">` : '';
+// ── Toast (white, 342px) ──────────────────────────────────────────
+function showToast() {
+  // Reset bar animation
+  const bar = $('toastBar');
+  bar.style.animation = 'none';
+  bar.getBoundingClientRect();
   toast.classList.add('visible');
+  bar.style.animation = '';
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => toast.classList.remove('visible'), 3000);
+  toastTimer = setTimeout(dismissToast, 3100);
 }
 
-// ── Preview ───────────────────────────────────────────────────────
-function openPreview(src) {
-  previewImg.src = src;
-  previewOverlay.classList.add('open');
+function dismissToast() {
+  toast.classList.remove('visible');
+  if (toastTimer) clearTimeout(toastTimer);
 }
-function closePreview() {
-  previewOverlay.classList.remove('open');
+
+// ── Edit screen ───────────────────────────────────────────────────
+function openEdit(src, prompt) {
+  editImg.src = src || './photos/photo-1.jpg';
+  $('editPromptTxt').textContent = prompt || 'Create a picture of me in a christmas hoodie against a beige...';
+  buildHeadshots(src);
+  editScreen.classList.add('open');
+  $('editScroll').scrollTop = 0;
 }
+
+function closeEdit() {
+  editScreen.classList.remove('open');
+}
+
+function buildHeadshots(selectedSrc) {
+  editHeadshots.innerHTML = '';
+  const hrefs = [
+    './photos/photo-1.jpg',
+    './photos/photo-2.png',
+    './photos/photo-1.jpg',
+    './photos/photo-2.png',
+    './photos/photo-1.jpg',
+    './photos/photo-2.png',
+  ];
+  hrefs.forEach((src, i) => {
+    const img = document.createElement('img');
+    img.className = 'edit-hs-item' + (src === selectedSrc && i === 0 ? ' selected' : '');
+    img.src = src;
+    img.alt = '';
+    img.onclick = () => {
+      editHeadshots.querySelectorAll('.edit-hs-item').forEach(el => el.classList.remove('selected'));
+      img.classList.add('selected');
+      editImg.src = src;
+    };
+    editHeadshots.appendChild(img);
+  });
+}
+
+// Tap outside chat to collapse
+document.addEventListener('click', e => {
+  if (S.chatOpen && !chatWrap.contains(e.target)) collapsePrompt();
+});
 
 // ── Init ──────────────────────────────────────────────────────────
 buildGallery();
