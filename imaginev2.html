@@ -77,72 +77,13 @@ html,body{
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
-/* ── Status bar: hangs from header bottom ────────────────── */
-/*
-  The header (z:20) covers the pill while it slides in from above,
-  creating the "grows from header" effect. Pill r=8 (Figma spec).
-*/
-.v2-status{
-  position:absolute;top:60px;left:50%;
-  transform:translateX(-50%);
-  z-index:10;pointer-events:none;
-}
-.v2-pill{
-  background:white;
-  border-radius:8px;
-  box-shadow:0 6px 20px rgba(0,4,9,.10);
-  display:flex;align-items:center;justify-content:center;
-  width:113px;height:36px;
-  overflow:hidden;
-  transform:translateY(-100%);
-  opacity:0;
-  will-change:width,height,transform,opacity;
-}
-.v2-pill.active{pointer-events:auto;cursor:pointer}
-
-/* Creating content */
-.v2-creating{
-  display:flex;align-items:center;gap:8px;padding:0 12px;white-space:nowrap;
-}
+/* ── Spinner (used in toast) ─────────────────────────────── */
 @keyframes v2spin{to{transform:rotate(360deg)}}
 .v2-spin{
   width:16px;height:16px;flex-shrink:0;
   border:1.5px solid rgba(0,4,9,.12);border-top-color:var(--c0);
   border-radius:50%;animation:v2spin .8s linear infinite;
 }
-.v2-creating span{
-  font-size:14px;font-weight:420;line-height:16px;color:var(--c0);
-  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
-}
-
-/* Expanded content */
-.v2-exp{
-  display:none;align-items:center;gap:8px;
-  padding:0 14px;white-space:nowrap;width:100%;justify-content:center;
-}
-.v2-thumbs{position:relative;width:30px;height:28px;flex-shrink:0}
-.v2-th{
-  position:absolute;border-radius:4px;object-fit:cover;
-  border:1.5px solid white;background:#e5e6e6;
-}
-.v2-th-back{width:22px;height:22px;left:0;top:3px;z-index:1}
-.v2-th-front{width:26px;height:26px;left:4px;top:0;z-index:2}
-.v2-exp-txt{
-  font-size:14px;font-weight:450;line-height:16px;color:var(--c0);
-  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
-}
-
-/* Condensed content */
-.v2-cond{
-  display:none;align-items:center;gap:8px;
-  padding:0 12px;white-space:nowrap;width:100%;
-}
-.v2-cond-num{
-  font-size:14px;font-weight:450;color:var(--c0);flex-shrink:0;
-  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
-}
-.v2-cond-bar{flex:1;height:3px;background:rgba(0,4,9,.10);border-radius:99px;overflow:hidden}
-.v2-cond-fill{height:100%;width:100%;background:var(--c0);border-radius:99px}
 
 /* ── Scroll area ─────────────────────────────────────────── */
 .scroll{
@@ -587,30 +528,6 @@ html,body{
     </div>
   </header>
 
-  <!-- ── Status bar ─────────────────────────────────────────── -->
-  <div class="v2-status" id="v2Status">
-    <div class="v2-pill" id="v2Pill">
-      <div class="v2-creating" id="v2Creating">
-        <div class="v2-spin"></div>
-        <span>Creating...</span>
-      </div>
-      <div class="v2-exp" id="v2Exp">
-        <div class="v2-thumbs">
-          <img class="v2-th v2-th-back" id="v2ThBack" src="./photos/photo-1.jpg" alt="">
-          <img class="v2-th v2-th-front" id="v2ThFront" src="./photos/photo-2.png" alt="">
-        </div>
-        <span class="v2-exp-txt">1 images created</span>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M3 5l4 4 4-4" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-      </div>
-      <div class="v2-cond" id="v2Cond">
-        <span class="v2-cond-num" id="v2CndNum">1</span>
-        <div class="v2-cond-bar"><div class="v2-cond-fill"></div></div>
-      </div>
-    </div>
-  </div>
-
   <!-- ── Main scroll ─────────────────────────────────────────── -->
   <div class="scroll" id="mainScroll">
     <div class="hdr-spacer"></div>
@@ -868,7 +785,6 @@ html,body{
 </div><!-- end .screen -->
 </div><!-- end .phone -->
 
-<script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
 <script>
 
 // ── Refs ──────────────────────────────────────────────────────────
@@ -878,10 +794,6 @@ const chat         = $('chat');
 const chatWrap     = $('chatWrap');
 const chatTx       = $('chatTx');
 const chatGenLabel = $('chatGenLabel');
-const v2Pill       = $('v2Pill');
-const v2Creating   = $('v2Creating');
-const v2Exp        = $('v2Exp');
-const v2Cond       = $('v2Cond');
 const toast        = $('toast');
 const gallery      = $('gallery');
 const editScreen   = $('editScreen');
@@ -892,11 +804,9 @@ const editHeadshots= $('editHeadshots');
 const S = {
   chatOpen: false,
   promptText: '',
-  statusPhase: 'hidden',   // hidden | creating | expanded | condensed
   genCount: 0,
   lastGenSrc: '',
   lastPrompt: '',
-  condenseOnScroll: false,
 };
 
 // ── Data ──────────────────────────────────────────────────────────
@@ -1081,15 +991,10 @@ function handleCreate(e) {
 
 // ── Generation flow ───────────────────────────────────────────────
 function startGeneration(prompt) {
-  S.statusPhase = 'creating';
-  showCreatingPill();
-
   genTimer1 = setTimeout(() => {
     const src = GEN_IMGS[S.genCount % GEN_IMGS.length];
     S.genCount++;
     S.lastGenSrc = src;
-    morphToExpanded(src);
-
     setTimeout(() => prependGeneratedCard(src, prompt), 200);
     genTimer2 = setTimeout(() => dismissToast(), 500);
     genTimer3 = setTimeout(() => {
@@ -1098,61 +1003,6 @@ function startGeneration(prompt) {
     }, 700);
   }, 2500);
 }
-
-// ── Status bar ────────────────────────────────────────────────────
-function showCreatingPill() {
-  setStatusContent('creating');
-  gsap.set(v2Pill, { width: 113, height: 36, opacity: 1, y: -36 });
-  gsap.to(v2Pill, { y: 0, duration: 0.55, ease: 'back.out(1.3)' });
-}
-
-function morphToExpanded(src) {
-  S.statusPhase = 'expanded';
-  S.condenseOnScroll = true;
-  $('v2ThFront').src = src;
-  gsap.to(v2Creating, { opacity: 0, duration: 0.18, onComplete: () => {
-    setStatusContent('expanded');
-    gsap.fromTo(v2Exp, { opacity: 0 }, { opacity: 1, duration: 0.22 });
-  }});
-  gsap.to(v2Pill, { width: 214, duration: 0.52, ease: 'back.out(1.4)' });
-  v2Pill.classList.add('active');
-  v2Pill.onclick = () => openEdit(S.lastGenSrc, S.lastPrompt);
-}
-
-function condenseStatus() {
-  if (S.statusPhase !== 'expanded') return;
-  S.statusPhase = 'condensed';
-  gsap.to(v2Exp, { opacity: 0, duration: 0.14, onComplete: () => {
-    setStatusContent('condensed');
-    gsap.fromTo(v2Cond, { opacity: 0 }, { opacity: 1, duration: 0.18 });
-  }});
-  gsap.to(v2Pill, { width: 88, height: 28, duration: 0.38, ease: 'power3.inOut' });
-}
-
-function expandStatus() {
-  if (S.statusPhase !== 'condensed') return;
-  S.statusPhase = 'expanded';
-  gsap.to(v2Cond, { opacity: 0, duration: 0.14, onComplete: () => {
-    setStatusContent('expanded');
-    gsap.fromTo(v2Exp, { opacity: 0 }, { opacity: 1, duration: 0.18 });
-  }});
-  gsap.to(v2Pill, { width: 214, height: 36, duration: 0.42, ease: 'back.out(1.3)' });
-}
-
-function setStatusContent(state) {
-  v2Creating.style.display = state === 'creating' ? 'flex' : 'none';
-  v2Exp.style.display      = state === 'expanded'  ? 'flex' : 'none';
-  v2Cond.style.display     = state === 'condensed' ? 'flex' : 'none';
-  if (state === 'creating') gsap.set(v2Creating, { opacity: 1 });
-}
-
-// ── Scroll → condense/expand ──────────────────────────────────────
-mainScroll.addEventListener('scroll', () => {
-  if (!S.condenseOnScroll) return;
-  const st = mainScroll.scrollTop;
-  if (st > 24 && S.statusPhase === 'expanded') condenseStatus();
-  if (st < 8  && S.statusPhase === 'condensed') expandStatus();
-}, { passive: true });
 
 // ── Toast (white, 342px) ──────────────────────────────────────────
 function showToast() {
