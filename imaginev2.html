@@ -940,6 +940,7 @@ function buildGallery() {
       <img src="${src}" loading="lazy" draggable="false">
       <button class="g-use-btn">${COPY_ICON}<span>Use</span></button>
     `;
+    card.addEventListener('click', handleCardClick);
     gallery.appendChild(card);
   });
 }
@@ -953,6 +954,7 @@ function prependGeneratedCard(src, prompt) {
       <img src="${src}" draggable="false">
       <button class="g-use-btn">${COPY_ICON}<span>Use</span></button>
     `;
+    card.addEventListener('click', handleCardClick);
     card.classList.remove('skeleton');
     card.classList.add('loaded');
   }, 700);
@@ -978,6 +980,21 @@ function startHintCycle() {
   if (hintTimer) clearInterval(hintTimer);
   hintTrack = document.getElementById('hintTrack');
   hintTimer = setInterval(advanceHint, 3000);
+}
+
+// ── Gallery card click → auto-fill prompt ─────────────────────────
+function handleCardClick(e) {
+  if (e.target.closest('.g-use-btn')) return; // don't intercept Use button
+  const idx = Math.floor(Math.random() * PROMPTS.length);
+  if (!S.chatOpen) {
+    S.chatOpen = true;
+    chat.classList.add('expanded');
+    chatWrap.classList.add('expanded');
+    clearInterval(hintTimer);
+  }
+  chatTx.value = PROMPTS[idx];
+  S.promptText = PROMPTS[idx];
+  setTimeout(() => chatTx.focus(), 80);
 }
 
 // ── Chat handlers ─────────────────────────────────────────────────
