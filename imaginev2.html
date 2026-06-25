@@ -411,11 +411,19 @@ html,body{
   border:1.5px solid #E0E1E1;
   background:#FFF;
   box-shadow:0 2px 16px 0 rgba(0,0,0,0.10);
+  overflow:hidden;
   z-index:30;
   transform:translateY(32px);
   opacity:0;
   pointer-events:none;
   transition:transform .45s cubic-bezier(0.16,1,0.3,1), opacity .3s ease;
+}
+.bt-progress{
+  position:absolute;
+  bottom:0;left:0;
+  height:2px;
+  width:0%;
+  background:var(--c0);
 }
 .bottom-toast.visible{
   transform:translateY(0);
@@ -760,7 +768,7 @@ html,body{
         <path d="M9 12.5V9" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
         <path d="M8.99707 7.3999C8.44507 7.3999 7.99707 6.9509 7.99707 6.3999C7.99707 5.8489 8.44507 5.3999 8.99707 5.3999C9.54907 5.3999 9.99707 5.8489 9.99707 6.3999C9.99707 6.9509 9.54907 7.3999 8.99707 7.3999Z" fill="#000409"/>
       </svg>
-      <span class="bt-txt" id="btTxt">Your image is ready</span>
+      <span class="bt-txt" id="btTxt">Created image added to Gallery</span>
     </div>
     <button class="bt-close" onclick="dismissBottomToast()">
       <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none">
@@ -768,6 +776,7 @@ html,body{
         <path d="M3.55566 3.55566L12.4446 12.4446" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
     </button>
+    <div class="bt-progress" id="btProgress"></div>
   </div>
 
   <!-- ── Edit screen (Frame 6: image view + edit) ───────────── -->
@@ -913,6 +922,7 @@ const toast        = $('toast');
 const resultTray   = $('resultTray');
 const bottomToast  = $('bottomToast');
 const btTxt        = $('btTxt');
+const btProgress   = $('btProgress');
 const gallery      = $('gallery');
 const editScreen   = $('editScreen');
 const editImg      = $('editImg');
@@ -1161,16 +1171,31 @@ function hideResultTray() {
   setTimeout(() => { resultTray.innerHTML = ''; }, 600);
 }
 
+const BT_DURATION = 4000; // progress bar duration before auto-dismiss
 let btTimer;
+
 function showBottomToast() {
+  if (btTimer) clearTimeout(btTimer);
   bottomToast.classList.remove('hiding');
   bottomToast.classList.add('visible');
-  if (btTimer) clearTimeout(btTimer);
+
+  // Reset progress bar, then animate to full width
+  btProgress.style.transition = 'none';
+  btProgress.style.width = '0%';
+  btProgress.getBoundingClientRect(); // force reflow
+  requestAnimationFrame(() => {
+    btProgress.style.transition = `width ${BT_DURATION}ms linear`;
+    btProgress.style.width = '100%';
+  });
+
+  btTimer = setTimeout(() => dismissBottomToast(), BT_DURATION);
 }
 
 function dismissBottomToast() {
   if (!bottomToast.classList.contains('visible')) return;
   if (btTimer) clearTimeout(btTimer);
+  btProgress.style.transition = 'none';
+  btProgress.style.width = '0%';
   bottomToast.classList.add('hiding');
   bottomToast.classList.remove('visible');
   btTimer = setTimeout(() => bottomToast.classList.remove('hiding'), 350);
