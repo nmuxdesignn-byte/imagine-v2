@@ -370,19 +370,11 @@ html,body{
   padding:8px 24px;
   opacity:1;
 }
-/* ── image card: hidden until tray opens, then slides up tilted ── */
+/* ── image card (transform/opacity/transition managed inline per-card) ── */
 .rt-img{
   position:relative;
   width:80px;height:80px;border-radius:8px;
   background:#f0f0f0;overflow:hidden;flex-shrink:0;
-  transform:translateY(32px) rotate(5deg) scale(0.8);
-  opacity:0;
-  transition:none;
-}
-.rt-img.enter{
-  transform:translateY(0) rotate(0deg) scale(1);
-  opacity:1;
-  transition:transform .7s cubic-bezier(0.34,1.1,0.64,1), opacity .35s ease;
 }
 /* ── skeleton overlay fades out to reveal image ── */
 .rt-img::after{
@@ -757,10 +749,8 @@ html,body{
     <span class="toast-txt">Creating</span>
   </div>
 
-  <!-- ── Result tray (morphs from header after generation) ──── -->
-  <div class="result-tray" id="resultTray">
-    <div class="rt-img" id="rtImgWrap"><img id="rtImg" src="" alt=""></div>
-  </div>
+  <!-- ── Result tray (morphs from header, cards prepended per generation) ── -->
+  <div class="result-tray" id="resultTray"></div>
 
   <!-- ── Bottom toast (appears after image is revealed) ──────── -->
   <div class="bottom-toast" id="bottomToast">
@@ -921,8 +911,6 @@ const chatTx       = $('chatTx');
 const chatGenLabel = $('chatGenLabel');
 const toast        = $('toast');
 const resultTray   = $('resultTray');
-const rtImgWrap    = $('rtImgWrap');
-const rtImg        = $('rtImg');
 const bottomToast  = $('bottomToast');
 const btTxt        = $('btTxt');
 const gallery      = $('gallery');
@@ -1102,42 +1090,75 @@ function handleCreate(e) {
   S.promptText = '';
   clearInterval(hintTimer);
   dismissBottomToast();
-  hideResultTray();
   showToast();
   startGeneration(prompt);
 }
 
 // ── Generation flow ───────────────────────────────────────────────
-function showResultTray(src) {
-  // Step 1: tray morphs open from header (max-height 0 → 100px)
-  resultTray.classList.add('visible');
+function addToTray(src) {
+  // Create new card, start invisible + tilted
+  const card = document.createElement('div');
+  card.className = 'rt-img';
+  const img = document.createElement('img');
+  card.appendChild(img);
 
-  // Step 2: after tray is ~half-open, card enters tilted then settles
+  // FLIP: existing cards are about to shift right 88px (80px + 8px gap).
+  // Counter that shift with translateX(88px) so they appear frozen,
+  // then animate back to translateX(0) = their new natural layout position.
+  const existing = Array.from(resultTray.querySelectorAll('.rt-img'));
+  existing.forEach(el => {
+    el.style.transition = 'none';
+    el.style.transform = 'translateX(88px)';
+  });
+
+  Object.assign(card.style, {
+    transition: 'none',
+    transform: 'translateY(28px) rotate(4deg) scale(0.8)',
+    opacity: '0',
+  });
+
+  resultTray.insertBefore(card, resultTray.firstChild);
+  card.getBoundingClientRect(); // force reflow
+
+  requestAnimationFrame(() => {
+    existing.forEach(el => {
+      el.style.transition = 'transform .5s cubic-bezier(0.25,0.46,0.45,0.94)';
+      el.style.transform = 'translateX(0)';
+    });
+    Object.assign(card.style, {
+      transition: 'transform .7s cubic-bezier(0.34,1.1,0.64,1), opacity .35s ease',
+      transform: 'translateY(0) rotate(0deg) scale(1)',
+      opacity: '1',
+    });
+  });
+
+  // After card settles: load image, hold grey skeleton, then reveal
   setTimeout(() => {
-    rtImgWrap.classList.add('enter');
-  }, 260);
+    img.src = src;
+    img.onload = () => {
+      setTimeout(() => {
+        card.classList.add('revealed');
+        setTimeout(() => showBottomToast(), 600);
+      }, 1100);
+    };
+  }, 450);
+}
 
-  // Step 3: preload image; once loaded fade skeleton out
-  rtImg.src = '';
-  rtImg.src = src;
-  rtImg.onload = () => {
-    // Hold grey skeleton so it feels like it's loading, then reveal
-    setTimeout(() => {
-      rtImgWrap.classList.add('revealed');
-      // Bottom toast slides up after reveal fade completes
-      setTimeout(() => showBottomToast(), 600);
-    }, 1100);
-  };
+function showResultTray(src) {
+  if (!resultTray.classList.contains('visible')) {
+    // First generation: morph tray open, then card enters
+    resultTray.classList.add('visible');
+    setTimeout(() => addToTray(src), 260);
+  } else {
+    // Subsequent generations: tray already open, prepend new card
+    addToTray(src);
+  }
 }
 
 function hideResultTray() {
   resultTray.classList.remove('visible');
   dismissBottomToast();
-  setTimeout(() => {
-    rtImgWrap.classList.remove('enter','revealed');
-    rtImg.src = '';
-    rtImg.onload = null;
-  }, 500);
+  setTimeout(() => { resultTray.innerHTML = ''; }, 600);
 }
 
 let btTimer;
