@@ -1157,14 +1157,9 @@ mainScroll.addEventListener('scroll', () => {
 
 // ── Toast (white, 342px) ──────────────────────────────────────────
 function showToast() {
-  // Reset bar animation
-  const bar = $('toastBar');
-  bar.style.animation = 'none';
-  bar.getBoundingClientRect();
   toast.classList.add('visible');
-  bar.style.animation = '';
   if (toastTimer) clearTimeout(toastTimer);
-  toastTimer = setTimeout(dismissToast, 3100);
+  toastTimer = setTimeout(dismissToast, 3000);
 }
 
 function dismissToast() {
