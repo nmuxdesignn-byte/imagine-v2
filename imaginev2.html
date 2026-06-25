@@ -324,7 +324,7 @@ html,body{
   position:absolute;
   left:50%;
   top:60px;
-  transform:translateX(-50%) translateY(-80px);
+  transform:translateX(-50%) translateY(-24px);
   background:#FFF;
   border-radius:8px;
   height:36px;
@@ -336,11 +336,11 @@ html,body{
   overflow:hidden;
   white-space:nowrap;
   opacity:0;pointer-events:none;
-  transition:opacity .3s ease, transform .4s cubic-bezier(0.22,1,0.36,1);
+  transition:opacity .45s cubic-bezier(0.16,1,0.3,1), transform .55s cubic-bezier(0.16,1,0.3,1);
 }
 .toast.visible{
   opacity:1;pointer-events:auto;
-  transform:translateX(-50%) translateY(0);
+  transform:translateX(-50%) translateY(8px);
 }
 .toast-txt{
   font-size:14px;font-weight:420;line-height:16px;color:var(--c0);
