@@ -279,25 +279,23 @@ html,body{
 }
 .hint-static{
   color:var(--c1);white-space:nowrap;flex-shrink:0;
-  font-size:24px;font-weight:450;line-height:26px;
-  letter-spacing:-0.288px;
+  font-size:16px;font-weight:420;line-height:18px;
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
-/* Clip window: shows exactly one 26px item at a time */
+/* Clip window: shows exactly one 18px item at a time */
 .hint-clip{
-  height:26px;overflow:hidden;flex-shrink:0;
+  height:18px;overflow:hidden;flex-shrink:0;
 }
-/* Vertical stack — each slot = 26px line-height + 5px gap = 31px */
+/* Vertical stack — each slot = 18px line-height + 5px gap = 23px */
 .hint-track{
   display:flex;flex-direction:column;gap:5px;
   will-change:transform;
 }
 .hint-item{
-  height:26px;line-height:26px;
+  height:18px;line-height:18px;
   color:#00875A;
   white-space:nowrap;flex-shrink:0;
-  font-size:24px;font-weight:450;
-  letter-spacing:-0.288px;
+  font-size:16px;font-weight:420;
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
@@ -960,8 +958,8 @@ const PROMPTS = [
 ];
 const GEN_IMGS = ['./photos/generated-01.png','./photos/generated-02.png'];
 
-// Slot animation: 26px line-height + 5px gap = 31px per slot
-const SLOT_H = 31;
+// Slot animation: 18px line-height + 5px gap = 23px per slot (Figma 9578-22918)
+const SLOT_H = 23;
 let hintTrack = null;
 let hintIdx = 0, hintTimer;
 let diceSpinning = false;
