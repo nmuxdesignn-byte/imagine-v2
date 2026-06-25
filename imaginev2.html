@@ -984,7 +984,8 @@ function startHintCycle() {
 
 // ── Gallery card click → auto-fill prompt ─────────────────────────
 function handleCardClick(e) {
-  if (e.target.closest('.g-use-btn')) return; // don't intercept Use button
+  if (e.target.closest('.g-use-btn')) return;
+  e.stopPropagation(); // prevent document listener from collapsing chat
   const idx = Math.floor(Math.random() * PROMPTS.length);
   if (!S.chatOpen) {
     S.chatOpen = true;
