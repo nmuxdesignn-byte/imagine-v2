@@ -342,6 +342,38 @@ html,body{
   opacity:1;pointer-events:auto;
   transform:translateX(-50%) translateY(8px);
 }
+/* ── Result tray (slides from behind header after generation) ── */
+.result-tray{
+  position:absolute;
+  top:60px;left:0;right:0;
+  display:flex;
+  padding:8px 24px;
+  align-items:center;
+  gap:8px;
+  background:#FFF;
+  border-bottom:0.5px solid #E0E1E1;
+  box-shadow:0 2px 16px 0 rgba(0,0,0,0.10);
+  z-index:15; /* below header z:20 so it emerges from behind */
+  transform:translateY(-100%);
+  transition:transform .5s cubic-bezier(0.16,1,0.3,1);
+}
+.result-tray.visible{transform:translateY(0)}
+.rt-img{
+  width:48px;height:48px;border-radius:6px;
+  background:#f0f0f0;overflow:hidden;flex-shrink:0;
+}
+.rt-img img{width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .4s ease}
+.rt-img img.loaded{opacity:1}
+.rt-label{
+  font-size:14px;font-weight:420;line-height:16px;color:var(--c0);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+}
+.rt-sub{
+  font-size:12px;font-weight:420;line-height:14px;color:rgba(0,4,9,0.5);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+  margin-top:2px;
+}
+
 .toast-txt{
   font-size:14px;font-weight:420;line-height:16px;color:var(--c0);
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;white-space:nowrap;
@@ -656,6 +688,15 @@ html,body{
     <span class="toast-txt">Creating</span>
   </div>
 
+  <!-- ── Result tray (slides from header after generation) ──── -->
+  <div class="result-tray" id="resultTray">
+    <div class="rt-img"><img id="rtImg" src="" alt=""></div>
+    <div>
+      <div class="rt-label">Image created</div>
+      <div class="rt-sub">Tap to explore</div>
+    </div>
+  </div>
+
   <!-- ── Edit screen (Frame 6: image view + edit) ───────────── -->
   <div class="edit-screen" id="editScreen">
     <div class="edit-header">
@@ -796,6 +837,8 @@ const chatWrap     = $('chatWrap');
 const chatTx       = $('chatTx');
 const chatGenLabel = $('chatGenLabel');
 const toast        = $('toast');
+const resultTray   = $('resultTray');
+const rtImg        = $('rtImg');
 const gallery      = $('gallery');
 const editScreen   = $('editScreen');
 const editImg      = $('editImg');
@@ -977,12 +1020,29 @@ function handleCreate(e) {
 }
 
 // ── Generation flow ───────────────────────────────────────────────
+function showResultTray(src) {
+  // Preload image, reveal once loaded
+  rtImg.onload = () => rtImg.classList.add('loaded');
+  rtImg.src = src;
+  resultTray.classList.add('visible');
+}
+
+function hideResultTray() {
+  resultTray.classList.remove('visible');
+  setTimeout(() => {
+    rtImg.classList.remove('loaded');
+    rtImg.src = '';
+  }, 500);
+}
+
 function startGeneration(prompt) {
   genTimer1 = setTimeout(() => {
     const src = GEN_IMGS[S.genCount % GEN_IMGS.length];
     S.genCount++;
     S.lastGenSrc = src;
-    genTimer2 = setTimeout(() => dismissToast(), 500);
+    // Fade out Creating toast, then slide in result tray
+    dismissToast();
+    genTimer2 = setTimeout(() => showResultTray(src), 350);
     genTimer3 = setTimeout(() => {
       chat.classList.remove('generating');
       startHintCycle();
