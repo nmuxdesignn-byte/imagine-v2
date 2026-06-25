@@ -288,9 +288,8 @@ html,body{
 .chat-hint-rolling{overflow:hidden;height:18px;display:inline-flex;flex-direction:column;flex-shrink:0}
 .hint-item{
   height:18px;line-height:18px;
-  background:var(--hint-grad);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
-  background-clip:text;white-space:nowrap;
+  color:#00875A;
+  white-space:nowrap;
 }
 
 /* Reference image strip (shown in expanded state when photos attached) */
@@ -960,9 +959,8 @@ function buildGallery() {
     card.className = 'g-card';
     card.innerHTML = `
       <img src="${src}" loading="lazy" draggable="false">
-      <button class="g-use-btn" onclick="event.stopPropagation()"><span>${label}</span></button>
+      <button class="g-use-btn"><span>${label}</span></button>
     `;
-    card.addEventListener('click', () => openEdit(src, ''));
     gallery.appendChild(card);
   });
 }
@@ -974,12 +972,10 @@ function prependGeneratedCard(src, prompt) {
   setTimeout(() => {
     card.innerHTML = `
       <img src="${src}" draggable="false">
-      <button class="g-use-btn" onclick="event.stopPropagation()"><span>Use</span></button>
+      <button class="g-use-btn"><span>Use</span></button>
     `;
     card.classList.remove('skeleton');
     card.classList.add('loaded');
-    card.querySelector('img').onload = null;
-    card.addEventListener('click', () => openEdit(src, prompt));
   }, 700);
 }
 
