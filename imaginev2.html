@@ -996,7 +996,6 @@ function startGeneration(prompt) {
     const src = GEN_IMGS[S.genCount % GEN_IMGS.length];
     S.genCount++;
     S.lastGenSrc = src;
-    setTimeout(() => prependGeneratedCard(src, prompt), 200);
     genTimer2 = setTimeout(() => dismissToast(), 500);
     genTimer3 = setTimeout(() => {
       chat.classList.remove('generating');
