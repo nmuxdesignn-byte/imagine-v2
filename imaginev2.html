@@ -855,20 +855,6 @@ function buildGallery() {
   });
 }
 
-function prependGeneratedCard(src, prompt) {
-  const card = document.createElement('div');
-  card.className = 'g-card skeleton';
-  gallery.prepend(card);
-  setTimeout(() => {
-    card.innerHTML = `
-      <img src="${src}" draggable="false">
-      <button class="g-use-btn">${COPY_ICON}<span>Use</span></button>
-    `;
-    card.addEventListener('click', handleCardClick);
-    card.classList.remove('skeleton');
-    card.classList.add('loaded');
-  }, 700);
-}
 
 // ── Hint cycle ────────────────────────────────────────────────────
 function advanceHint() {
