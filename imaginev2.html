@@ -204,7 +204,7 @@ html,body{
 /* Use overlay cta — matches Figma 9323:57830 */
 .g-use-btn{
   position:absolute;bottom:8px;right:8px;
-  display:flex;align-items:center;gap:4px;
+  display:flex;align-items:center;gap:6px;
   padding:4px 7px;
   background:rgba(0,4,9,1);
   border-radius:4px;border:none;cursor:pointer;
@@ -969,7 +969,7 @@ let toastTimer, toastBarAnimId;
 let genTimer1, genTimer2, genTimer3;
 
 // ── Gallery ───────────────────────────────────────────────────────
-const COPY_ICON = `<svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="1" y="3" width="8" height="10" rx="1.5" stroke="white" stroke-width="1.2"/><path d="M4 1h7a1 1 0 0 1 1 1v9" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+const COPY_ICON = `<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 14 14" fill="none"><g clip-path="url(#cc)"><path d="M7.19466 1.36133H2.13911C1.70977 1.36133 1.36133 1.70977 1.36133 2.13911V8.75022C1.36133 9.17955 1.70977 9.52799 2.13911 9.52799H7.19466C7.62399 9.52799 7.97244 9.17955 7.97244 8.75022V2.13911C7.97244 1.70977 7.62399 1.36133 7.19466 1.36133Z" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/><path d="M10.306 4.14062L11.8872 4.55619C12.3026 4.66586 12.5507 5.0913 12.441 5.50664L10.6583 12.2756C10.5487 12.691 10.1232 12.9391 9.7079 12.8294L6.03223 11.8611" stroke="white" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/></g><defs><clipPath id="cc"><rect width="14" height="14" fill="white"/></clipPath></defs></svg>`;
 
 function buildGallery() {
   gallery.innerHTML = '';
