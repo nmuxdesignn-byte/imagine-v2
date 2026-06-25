@@ -222,7 +222,7 @@ html,body{
 /* ── Chat (same structure as prototype.html) ─────────────── */
 .chat-wrap{
   position:absolute;
-  left:16px;right:16px;top:663px;
+  left:16px;right:16px;bottom:16px;
   z-index:25;
 }
 /* White chat box */
@@ -273,30 +273,31 @@ html,body{
   cursor:pointer;
 }
 .chat.expanded .chat-hint{opacity:0;visibility:hidden;pointer-events:none}
-/* Matches Figma "animate" 290×23px horizontal layout */
 .chat-hint-wrap{
   display:flex;align-items:center;gap:5px;
   overflow:hidden;
-  font-size:16px;font-weight:420;line-height:18px;
-  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 .hint-static{
   color:var(--c1);white-space:nowrap;flex-shrink:0;
+  font-size:24px;font-weight:450;line-height:26px;
+  letter-spacing:-0.288px;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
-/* Clip window: shows exactly one 18px item at a time */
+/* Clip window: shows exactly one 26px item at a time */
 .hint-clip{
-  height:18px;overflow:hidden;flex-shrink:0;
+  height:26px;overflow:hidden;flex-shrink:0;
 }
-/* Vertical stack that slides up — each slot = 18px text + 5px gap = 23px */
+/* Vertical stack — each slot = 26px line-height + 5px gap = 31px */
 .hint-track{
   display:flex;flex-direction:column;gap:5px;
   will-change:transform;
 }
 .hint-item{
-  height:18px;line-height:18px;
+  height:26px;line-height:26px;
   color:#00875A;
   white-space:nowrap;flex-shrink:0;
-  font-size:16px;font-weight:420;
+  font-size:24px;font-weight:450;
+  letter-spacing:-0.288px;
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
@@ -364,14 +365,14 @@ html,body{
 .bc-sep{width:1px;height:16px;background:rgba(255,255,255,.3);flex-shrink:0}
 .bc-credit-val{font-size:16px;font-weight:450;color:white;font-feature-settings:"ss01"1,"ss02"1,"ss06"1;}
 
-/* Disclaimer strip (below chat, overlaps by 10px) */
+/* Disclaimer strip — absolutely below chat so wrap height = chat only */
 .chat-disclaimer{
-  width:100%;height:44px;
+  position:absolute;top:100%;left:0;right:0;
+  height:44px;
   background:#f7f7f8;
   border-radius:0 0 8px 8px;
   display:flex;align-items:flex-end;justify-content:center;
   padding:0 10px 10px;
-  margin-top:-10px;
   opacity:0;pointer-events:none;
   transition:opacity .22s ease;
   font-size:14px;font-weight:420;line-height:18px;color:var(--c1);
@@ -648,7 +649,7 @@ html,body{
       <p class="t-medium">Any look. Any place <span class="t-cursor">|</span></p>
     </div>
     <div class="gallery" id="gallery"></div>
-    <div style="height:112px"></div>
+    <div style="height:88px"></div>
   </div>
 
   <!-- Bottom gradient -->
@@ -959,8 +960,8 @@ const PROMPTS = [
 ];
 const GEN_IMGS = ['./photos/generated-01.png','./photos/generated-02.png'];
 
-// Slot animation: 18px text + 5px gap = 23px per slot (matches Figma "item" frame)
-const SLOT_H = 23;
+// Slot animation: 26px line-height + 5px gap = 31px per slot
+const SLOT_H = 31;
 let hintTrack = null;
 let hintIdx = 0, hintTimer;
 let diceSpinning = false;
