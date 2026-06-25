@@ -322,8 +322,9 @@ html,body{
 /* ── Toast pill (top of screen, appears on Create) ───────── */
 .toast{
   position:absolute;
-  right:138px;
+  left:50%;
   top:60px;
+  transform:translateX(-50%) translateY(-80px);
   background:#FFF;
   border-radius:8px;
   height:36px;
@@ -335,11 +336,11 @@ html,body{
   overflow:hidden;
   white-space:nowrap;
   opacity:0;pointer-events:none;
-  transform:translateY(-10px);
-  transition:opacity .28s ease, transform .32s cubic-bezier(0.22,1,0.36,1);
+  transition:opacity .3s ease, transform .4s cubic-bezier(0.22,1,0.36,1);
 }
 .toast.visible{
-  opacity:1;pointer-events:auto;transform:translateY(0);
+  opacity:1;pointer-events:auto;
+  transform:translateX(-50%) translateY(0);
 }
 .toast-txt{
   font-size:14px;font-weight:420;line-height:16px;color:var(--c0);
@@ -651,8 +652,8 @@ html,body{
 
   <!-- ── Toast pill (top, appears on Create) ──────────────── -->
   <div class="toast" id="toast">
-    <div class="v2-spin" style="width:14px;height:14px;border-width:1.2px;flex-shrink:0"></div>
-    <span class="toast-txt">Generating image...</span>
+    <div class="v2-spin" style="width:14px;height:14px;border-width:1.2px;flex-shrink:0;border-color:rgba(0,135,90,.2);border-top-color:#00875A"></div>
+    <span class="toast-txt">Creating</span>
   </div>
 
   <!-- ── Edit screen (Frame 6: image view + edit) ───────────── -->
