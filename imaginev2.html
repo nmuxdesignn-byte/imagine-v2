@@ -276,20 +276,35 @@ html,body{
 .chat-hint{
   position:absolute;inset:0;display:flex;align-items:center;
   padding-left:52px;padding-right:12px;
-  opacity:1;transition:opacity .2s ease,transform .26s ease;
+  opacity:1;transition:opacity .2s ease;
   cursor:pointer;
 }
 .chat.expanded .chat-hint{opacity:0;visibility:hidden;pointer-events:none}
+/* Matches Figma "animate" 290×23px horizontal layout */
 .chat-hint-wrap{
-  flex:1;overflow:hidden;display:flex;align-items:center;
-  font-size:16px;font-weight:420;line-height:18px;color:var(--c1);
-  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;white-space:nowrap;
+  display:flex;align-items:center;gap:5px;
+  overflow:hidden;
+  font-size:16px;font-weight:420;line-height:18px;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
-.chat-hint-rolling{overflow:hidden;height:18px;display:inline-flex;flex-direction:column;flex-shrink:0}
+.hint-static{
+  color:var(--c1);white-space:nowrap;flex-shrink:0;
+}
+/* Clip window: shows exactly one 18px item at a time */
+.hint-clip{
+  height:18px;overflow:hidden;flex-shrink:0;
+}
+/* Vertical stack that slides up — each slot = 18px text + 5px gap = 23px */
+.hint-track{
+  display:flex;flex-direction:column;gap:5px;
+  will-change:transform;
+}
 .hint-item{
   height:18px;line-height:18px;
   color:#00875A;
-  white-space:nowrap;
+  white-space:nowrap;flex-shrink:0;
+  font-size:16px;font-weight:420;
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 
 /* Reference image strip (shown in expanded state when photos attached) */
@@ -662,9 +677,16 @@ html,body{
 
       <div class="chat-hint" id="chatHint">
         <div class="chat-hint-wrap">
-          <span style="margin-right:3px">Create a picture of me</span>
-          <div class="chat-hint-rolling">
-            <span class="hint-item" id="hintText">as superhero</span>
+          <span class="hint-static">Create a picture of me</span>
+          <div class="hint-clip">
+            <div class="hint-track" id="hintTrack">
+              <span class="hint-item">as superhero </span>
+              <span class="hint-item">in a black tuxedo</span>
+              <span class="hint-item">as an artist</span>
+              <span class="hint-item">in Tokyo at night</span>
+              <span class="hint-item">at a beach wedding</span>
+              <span class="hint-item">as superhero </span><!-- seamless loop duplicate -->
+            </div>
           </div>
         </div>
       </div>
@@ -942,9 +964,11 @@ const PROMPTS = [
   'on a yacht in the Mediterranean wearing white linen',
   'as a barista in a cozy New York coffee shop',
 ];
-const HINTS = ['as superhero','in a black tuxedo','as an artist','in Tokyo at night','at a beach wedding','as a chef','in the Himalayas','at golden hour'];
 const GEN_IMGS = ['./photos/generated-01.png','./photos/generated-02.png'];
 
+// Slot animation: 18px text + 5px gap = 23px per slot (matches Figma "item" frame)
+const SLOT_H = 23;
+let hintTrack = null;
 let hintIdx = 0, hintTimer;
 let diceSpinning = false;
 let toastTimer, toastBarAnimId;
@@ -980,26 +1004,25 @@ function prependGeneratedCard(src, prompt) {
 }
 
 // ── Hint cycle ────────────────────────────────────────────────────
-function startHintCycle() {
-  hintTimer = setInterval(() => {
-    if (S.chatOpen) return;
-    const el = $('hintText');
-    el.style.transition = 'transform .28s cubic-bezier(.4,0,1,1), opacity .22s ease';
-    el.style.transform = 'translateY(-10px)';
-    el.style.opacity = '0';
+function advanceHint() {
+  if (!hintTrack) hintTrack = document.getElementById('hintTrack');
+  if (S.chatOpen) return;
+  hintIdx++;
+  hintTrack.style.transition = 'transform 0.32s cubic-bezier(0.4, 0, 0.2, 1)';
+  hintTrack.style.transform = `translateY(${-hintIdx * SLOT_H}px)`;
+  if (hintIdx === 5) {
     setTimeout(() => {
-      hintIdx = (hintIdx + 1) % HINTS.length;
-      el.textContent = HINTS[hintIdx];
-      el.style.transition = 'none';
-      el.style.transform = 'translateY(14px)';
-      el.style.opacity = '0';
-      requestAnimationFrame(() => requestAnimationFrame(() => {
-        el.style.transition = 'transform .42s cubic-bezier(.22,1,.36,1), opacity .3s ease';
-        el.style.transform = 'translateY(0)';
-        el.style.opacity = '1';
-      }));
-    }, 300);
-  }, 3200);
+      hintTrack.style.transition = 'none';
+      hintIdx = 0;
+      hintTrack.style.transform = 'translateY(0)';
+    }, 2800);
+  }
+}
+
+function startHintCycle() {
+  if (hintTimer) clearInterval(hintTimer);
+  hintTrack = document.getElementById('hintTrack');
+  hintTimer = setInterval(advanceHint, 3000);
 }
 
 // ── Chat handlers ─────────────────────────────────────────────────
