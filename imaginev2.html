@@ -1389,29 +1389,25 @@ function collapseTray() {
     return trayCx - 24 - (r.left - trayRect.left + 40);
   });
 
-  // Start height shrink, then force a reflow so the browser commits
-  // the new max-height as the starting value before card transitions begin
-  resultTray.classList.add('tray-shrinking');
-  void resultTray.offsetHeight; // flush layout
-
-  // Start card convergence on the very next frame — clean, no jitter
+  // Phase 1 — cards converge to center + scale, NO fade yet, NO height change
+  void resultTray.offsetHeight;
   requestAnimationFrame(() => {
     cards.forEach((card, i) => {
-      card.style.transition = 'transform 360ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 280ms ease';
+      card.style.transition = 'transform 340ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 260ms ease';
       card.style.transform  = `translateX(${dxArr[i]}px) scale(0.55)`;
-      if (i > 0) card.style.opacity = '0';
+      if (i > 0) card.style.opacity = '0'; // non-lead fades during convergence
     });
   });
 
-  // Cards have converged — fade them all out
+  // Phase 2 (460ms) — hold is over: tray height shrinks AND lead card fades together
   setTimeout(() => {
-    cards.forEach(card => {
-      card.style.transition = 'opacity 180ms ease';
-      card.style.opacity    = '0';
-    });
-  }, 360);
+    resultTray.classList.add('tray-shrinking');
+    void resultTray.offsetHeight;
+    cards[0].style.transition = 'opacity 360ms ease';
+    cards[0].style.opacity    = '0';
+  }, 460);
 
-  // Tray morphs to funnel: swap classes (height springs 60→96), SVG appears
+  // Phase 3 (840ms) — height done: funnel morphs in, springs 60→96
   setTimeout(() => {
     resultTray.classList.remove('tray-shrinking');
     resultTray.classList.add('tray-collapsed');
@@ -1419,10 +1415,10 @@ function collapseTray() {
     const img = cards[0].querySelector('img');
     if (img?.src) rtPillImg.src = img.src;
     rtPillTxt.textContent = `${cards.length} image${cards.length !== 1 ? 's' : ''} created`;
-  }, 460);
+  }, 840);
 
-  // Pill (thumbnail + text) rises from the bottom of the curved tab
-  setTimeout(() => rtPill.classList.add('visible'), 600);
+  // Phase 4 (980ms) — thumbnail + text rise from the curved tab
+  setTimeout(() => rtPill.classList.add('visible'), 980);
 }
 
 function expandTray() {
