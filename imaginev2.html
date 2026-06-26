@@ -353,7 +353,7 @@ html,body{
   position:absolute;
   top:60px;left:0;right:0;
   display:flex;
-  padding:0 24px;
+  padding:8px 24px;
   align-items:center;
   gap:8px;
   background:#FFF;
@@ -363,11 +363,10 @@ html,body{
   max-height:0;
   overflow:hidden;
   opacity:0;
-  transition:max-height .6s cubic-bezier(0.25,0.46,0.45,0.94), padding .6s cubic-bezier(0.25,0.46,0.45,0.94), opacity .3s ease;
+  transition:max-height .6s cubic-bezier(0.25,0.46,0.45,0.94), opacity .3s ease;
 }
 .result-tray.visible{
   max-height:100px;
-  padding:8px 24px;
   opacity:1;
 }
 /* ── image card (transform/opacity/transition managed inline per-card) ── */
@@ -1159,11 +1158,10 @@ function addToTray(src) {
 
 function showResultTray(src) {
   if (!resultTray.classList.contains('visible')) {
-    // First generation: morph tray open, then card enters
-    resultTray.classList.add('visible');
-    setTimeout(() => addToTray(src), 260);
+    // Insert card first so tray never opens empty, then open on next frame
+    addToTray(src);
+    requestAnimationFrame(() => resultTray.classList.add('visible'));
   } else {
-    // Subsequent generations: tray already open, prepend new card
     addToTray(src);
   }
 }
