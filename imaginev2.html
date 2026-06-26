@@ -292,6 +292,20 @@ html,body{
 }
 .chat.expanded .chat-dice{opacity:1;transition:opacity .5s ease .15s}
 
+/* Reset link button (right of dice, gap:12px per Figma) */
+.chat-reset{
+  position:absolute;top:100px;left:96px; /* 52+32+12 */
+  height:32px;
+  display:flex;align-items:center;gap:12px;
+  background:none;border:none;padding:0;
+  cursor:pointer;z-index:3;
+  opacity:0;transition:opacity .5s ease .05s;
+  font-size:13px;font-weight:420;line-height:16px;color:var(--c0);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+  white-space:nowrap;
+}
+.chat.expanded .chat-reset{opacity:1;transition:opacity .5s ease .15s}
+
 /* Create CTA */
 .btn-create{
   position:absolute;bottom:12px;left:12px;right:12px;height:44px;
@@ -739,6 +753,8 @@ html,body{
         </svg>
       </div>
 
+      <button class="chat-reset" id="chatReset" onclick="event.stopPropagation();handleReset()">Reset</button>
+
       <button class="btn-create" id="btnCreate" onclick="handleCreate(event)">
         <span class="bc-label">Create</span>
         <div class="bc-sep"></div>
@@ -1044,6 +1060,13 @@ function handleChatAdd(e) {
   } else {
     chat.classList.toggle('has-refs');
   }
+}
+
+function handleReset() {
+  chatTx.value = '';
+  S.promptText = '';
+  S.lastPrompt = '';
+  chatTx.focus();
 }
 
 function expandPrompt() {
