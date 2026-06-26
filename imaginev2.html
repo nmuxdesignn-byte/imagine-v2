@@ -1383,46 +1383,38 @@ function collapseTray() {
 
   const trayRect = resultTray.getBoundingClientRect();
   const trayCx   = trayRect.width / 2;
-  const dxByCard = new Map();
 
-  // ── Phase 1 (0–400ms) ──────────────────────────────────────────────────────
-  // Tray height: 100→60px   } identical easing + duration keeps cards proportional
-  // Cards: converge + scale } to shrinking frame at every frame — no overflow/clip
-  // scale 0.55 → 80×0.55=44px fills 60px strip minus 8px top/bottom padding exactly
+  // ── Phase 1 (0–420ms): tray shrinks + cards converge to center + scale down ──
+  // Same easing + duration on both height and scale → cards stay proportional
+  // to the shrinking frame the entire time. No clipping, no lateral movement.
   resultTray.classList.add('tray-shrinking');
 
   cards.forEach((card, i) => {
     const rect   = card.getBoundingClientRect();
     const cardCx = rect.left - trayRect.left + 40;
     const dx     = trayCx - 24 - cardCx;
-    dxByCard.set(card, dx);
-    card.style.transition = 'transform 400ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 320ms ease';
+    card.style.transition = 'transform 420ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 340ms ease';
     card.style.transform  = `translateX(${dx}px) scale(0.55)`;
     if (i > 0) card.style.opacity = '0';
   });
 
-  // ── Phase 2 (380ms) ────────────────────────────────────────────────────────
-  // All cards exit LEFT — disappear at the screen's left edge (natural curtain)
+  // ── Phase 2 (420ms): tongue/folder morphs from tray bottom ─────────────────
+  // Lead card fades out, SVG funnel appears, height springs 60→96 (tab opens below)
   setTimeout(() => {
-    cards.forEach((card, i) => {
-      const dx = dxByCard.get(card) ?? 0;
-      card.style.transition = 'transform 280ms cubic-bezier(0.4,0,1,1), opacity 220ms ease';
-      card.style.transform  = `translateX(${dx - 380}px) scale(0.55)`;
-      if (i === 0) card.style.opacity = '0';
-    });
-  }, 380);
+    cards[0].style.transition = 'opacity 220ms ease';
+    cards[0].style.opacity    = '0';
 
-  // ── Phase 3 (680ms) ────────────────────────────────────────────────────────
-  // Swap shrinking→collapsed: height springs 60→96, pill tab opens from below
-  setTimeout(() => {
     resultTray.classList.remove('tray-shrinking');
     resultTray.classList.add('tray-collapsed');
     rtBgShape.classList.add('visible');
+
     const img = cards[0].querySelector('img');
     if (img?.src) rtPillImg.src = img.src;
     rtPillTxt.textContent = `${cards.length} image${cards.length !== 1 ? 's' : ''} created`;
-    setTimeout(() => rtPill.classList.add('visible'), 100);
-  }, 680);
+  }, 420);
+
+  // ── Phase 3 (600ms): "X images created" fades in ───────────────────────────
+  setTimeout(() => rtPill.classList.add('visible'), 600);
 }
 
 function expandTray() {
