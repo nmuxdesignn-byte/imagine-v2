@@ -465,7 +465,6 @@ html,body{
   pointer-events:none;
   opacity:0;
   z-index:1;
-  filter:drop-shadow(0 2px 16px rgba(0,0,0,.10));
   transition:opacity .26s ease;
 }
 .rt-bg-shape.visible{
@@ -1381,40 +1380,25 @@ function collapseTray() {
   const cards = Array.from(resultTray.querySelectorAll('.rt-img'));
   if (!cards.length) return;
 
-  const trayRect = resultTray.getBoundingClientRect();
-  const trayCx   = trayRect.width / 2;
-
-  // ── Phase 1 (0–420ms): tray shrinks + cards converge to center + scale down ──
-  // Same easing + duration on both height and scale → cards stay proportional
-  // to the shrinking frame the entire time. No clipping, no lateral movement.
+  // Phase 1: all cards fade out + tray height shrinks to strip
   resultTray.classList.add('tray-shrinking');
-
-  cards.forEach((card, i) => {
-    const rect   = card.getBoundingClientRect();
-    const cardCx = rect.left - trayRect.left + 40;
-    const dx     = trayCx - 24 - cardCx;
-    card.style.transition = 'transform 420ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 340ms ease';
-    card.style.transform  = `translateX(${dx}px) scale(0.55)`;
-    if (i > 0) card.style.opacity = '0';
+  cards.forEach(card => {
+    card.style.transition = 'opacity 300ms ease';
+    card.style.opacity    = '0';
   });
 
-  // ── Phase 2 (420ms): tongue/folder morphs from tray bottom ─────────────────
-  // Lead card fades out, SVG funnel appears, height springs 60→96 (tab opens below)
+  // Phase 2 (420ms): funnel/tongue morphs — SVG appears, height springs 60→96
   setTimeout(() => {
-    cards[0].style.transition = 'opacity 220ms ease';
-    cards[0].style.opacity    = '0';
-
     resultTray.classList.remove('tray-shrinking');
     resultTray.classList.add('tray-collapsed');
     rtBgShape.classList.add('visible');
-
     const img = cards[0].querySelector('img');
     if (img?.src) rtPillImg.src = img.src;
     rtPillTxt.textContent = `${cards.length} image${cards.length !== 1 ? 's' : ''} created`;
   }, 420);
 
-  // ── Phase 3 (600ms): "X images created" fades in ───────────────────────────
-  setTimeout(() => rtPill.classList.add('visible'), 600);
+  // Phase 3 (580ms): pill thumbnail + "X images created" appear from tab bottom
+  setTimeout(() => rtPill.classList.add('visible'), 580);
 }
 
 function expandTray() {
