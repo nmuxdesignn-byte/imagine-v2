@@ -1278,24 +1278,7 @@ function handleCreate(e) {
   dismissBottomToast();
   // If tray is collapsed, immediately reset to open state — no animation
   // needed here since the user just hit Create and the chatbox is closing
-  if (trayCollapsed) {
-    trayCollapsed = false;
-    // Fade out pill + SVG, then open expanded tray on top
-    rtPill.classList.remove('visible');
-    rtBgShape.style.transition = 'opacity 180ms ease';
-    rtBgShape.style.opacity    = '0';
-    setTimeout(() => {
-      rtBgShape.style.transition = '';
-      rtBgShape.style.opacity    = '';
-      rtBgShape.classList.remove('visible');
-      resultTray.classList.remove('tray-collapsed', 'tray-shrinking');
-      resultTray.querySelectorAll('.rt-img').forEach(card => {
-        card.style.transition = 'none';
-        card.style.transform  = 'translateY(0) rotate(0deg) scale(1)';
-        card.style.opacity    = '1';
-      });
-    }, 180);
-  }
+  if (trayCollapsed) expandTray();
   // Position creating pill below tray if tray already exists, else at header
   if (resultTray.classList.contains('visible')) {
     toast.classList.add('tray-mode');
@@ -1447,20 +1430,22 @@ function expandTray() {
   if (!trayCollapsed) return;
   trayCollapsed = false;
 
-  // Pill + shape fade out
+  // Pill fades out immediately
   rtPill.classList.remove('visible');
-  setTimeout(() => rtBgShape.classList.remove('visible'), 80);
 
-  // Restore full tray + spring cards in from their off-screen-left position
+  // SVG fades out quickly
+  setTimeout(() => rtBgShape.classList.remove('visible'), 60);
+
+  // Remove collapsed state + spring all cards back to natural positions
   setTimeout(() => {
     resultTray.classList.remove('tray-collapsed', 'tray-shrinking');
     const cards = Array.from(resultTray.querySelectorAll('.rt-img'));
     cards.forEach(card => {
-      card.style.transition = 'transform .52s cubic-bezier(0.34,1.1,0.64,1), opacity .34s ease';
+      card.style.transition = 'transform 420ms cubic-bezier(0.34,1.1,0.64,1), opacity 280ms ease';
       card.style.transform  = 'translateY(0) rotate(0deg) scale(1)';
       card.style.opacity    = '1';
     });
-  }, 200);
+  }, 140);
 }
 
 function initScrollCollapse() {
