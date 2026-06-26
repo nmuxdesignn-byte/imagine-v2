@@ -292,9 +292,9 @@ html,body{
   width:32px;height:32px;
   background:#F7F7F8;border:none;border-radius:999px;
   display:flex;align-items:center;justify-content:center;
-  opacity:0;transition:opacity .5s ease .05s;cursor:pointer;z-index:3;
+  opacity:0;pointer-events:none;cursor:pointer;z-index:3;
 }
-.chat.expanded .chat-dice{opacity:1;transition:opacity .5s ease .15s}
+.chat.expanded .chat-dice{opacity:1;pointer-events:auto;transition:opacity .3s ease .46s}
 
 /* Reset link button — right-aligned, underlined */
 .chat-reset{
@@ -303,13 +303,13 @@ html,body{
   display:flex;align-items:center;
   background:none;border:none;padding:0;
   cursor:pointer;z-index:3;
-  opacity:0;transition:opacity .5s ease .05s;
+  opacity:0;pointer-events:none;
   font-size:13px;font-weight:420;line-height:16px;color:var(--c0);
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
   white-space:nowrap;
   text-decoration:underline;
 }
-.chat.expanded .chat-reset{opacity:1;transition:opacity .5s ease .15s}
+.chat.expanded .chat-reset{opacity:1;pointer-events:auto;transition:opacity .3s ease .46s}
 
 /* Create CTA */
 .btn-create{
