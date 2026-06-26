@@ -1148,6 +1148,9 @@ function addToTray(src) {
     img.onload = () => {
       setTimeout(() => {
         card.classList.add('revealed');
+        // Hint only restarts once the image is fully revealed
+        chat.classList.remove('generating');
+        startHintCycle();
         setTimeout(() => showBottomToast(), 600);
       }, 1100);
     };
@@ -1209,10 +1212,6 @@ function startGeneration(prompt) {
     // Fade out Creating toast, then begin 3-step tray animation
     dismissToast();
     genTimer2 = setTimeout(() => showResultTray(src), 350);
-    genTimer3 = setTimeout(() => {
-      chat.classList.remove('generating');
-      startHintCycle();
-    }, 700);
   }, 2500);
 }
 
