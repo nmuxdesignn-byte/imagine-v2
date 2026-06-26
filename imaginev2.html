@@ -295,6 +295,7 @@ html,body{
   opacity:0;pointer-events:none;cursor:pointer;z-index:3;
 }
 .chat.expanded .chat-dice{opacity:1;pointer-events:auto;transition:opacity .3s ease .46s}
+.chat.collapsing .chat-dice{opacity:0;pointer-events:none;transition:opacity .2s ease}
 
 /* Reset link button — right-aligned, underlined */
 .chat-reset{
@@ -310,6 +311,7 @@ html,body{
   text-decoration:underline;
 }
 .chat.expanded .chat-reset{opacity:1;pointer-events:auto;transition:opacity .3s ease .46s}
+.chat.collapsing .chat-reset{opacity:0;pointer-events:none;transition:opacity .2s ease}
 
 /* Create CTA */
 .btn-create{
@@ -1102,15 +1104,20 @@ function expandPrompt() {
 
 function collapsePrompt() {
   S.chatOpen = false;
-  chat.classList.remove('expanded','has-refs');
-  chatWrap.classList.remove('expanded');
   chatTx.blur();
-  if (S.lastPrompt) {
-    chatGenLabel.textContent = S.lastPrompt;
-    chat.classList.add('prompt-set');
-  } else {
-    startHintCycle();
-  }
+  // Step 1: fade out dice + reset
+  chat.classList.add('collapsing');
+  // Step 2: after fade (~220ms), collapse height + wrap
+  setTimeout(() => {
+    chat.classList.remove('expanded', 'has-refs', 'collapsing');
+    chatWrap.classList.remove('expanded');
+    if (S.lastPrompt) {
+      chatGenLabel.textContent = S.lastPrompt;
+      chat.classList.add('prompt-set');
+    } else {
+      startHintCycle();
+    }
+  }, 260);
 }
 
 function onTxInput() {
