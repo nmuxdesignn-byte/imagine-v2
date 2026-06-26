@@ -361,7 +361,10 @@ html,body{
   box-shadow:0 2px 16px 0 rgba(0,0,0,0.10);
   z-index:15;
   max-height:0;
-  overflow:hidden;
+  overflow-x:auto;
+  overflow-y:hidden;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
   opacity:0;
   transition:max-height .6s cubic-bezier(0.25,0.46,0.45,0.94), opacity .3s ease;
 }
@@ -369,6 +372,7 @@ html,body{
   max-height:100px;
   opacity:1;
 }
+.result-tray::-webkit-scrollbar{display:none;}
 /* ── image card (transform/opacity/transition managed inline per-card) ── */
 .rt-img{
   position:relative;
