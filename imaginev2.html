@@ -177,6 +177,7 @@ html,body{
   cursor:pointer;
   transition:height .48s var(--ease);
   position:relative;
+  z-index:1;
 }
 .chat.expanded{height:200px;cursor:default}
 
@@ -321,7 +322,7 @@ html,body{
 .bc-sep{width:1px;height:16px;background:rgba(255,255,255,.3);flex-shrink:0}
 .bc-credit-val{font-size:16px;font-weight:450;color:white;font-feature-settings:"ss01"1,"ss02"1,"ss06"1;}
 
-/* Disclaimer strip — absolutely below chat so wrap height = chat only */
+/* Disclaimer strip — slides from behind chat bottom edge after expansion */
 .chat-disclaimer{
   position:absolute;top:100%;left:0;right:0;
   height:44px;
@@ -330,12 +331,18 @@ html,body{
   display:flex;align-items:flex-end;justify-content:center;
   padding:0 10px 10px;
   opacity:0;pointer-events:none;
-  transition:opacity .22s ease;
+  transform:translateY(-100%);
+  transition:transform .4s cubic-bezier(0.16,1,0.3,1), opacity .25s ease;
   font-size:14px;font-weight:420;line-height:18px;color:var(--c1);
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
   text-align:center;
+  z-index:0;
 }
-.chat-wrap.expanded .chat-disclaimer{opacity:1}
+.chat-wrap.expanded .chat-disclaimer{
+  opacity:1;
+  transform:translateY(0);
+  transition:transform .45s cubic-bezier(0.16,1,0.3,1) .44s, opacity .3s ease .44s;
+}
 
 /* ── Toast pill (top of screen, appears on Create) ───────── */
 .toast{
