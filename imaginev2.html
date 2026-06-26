@@ -403,6 +403,17 @@ html,body{
   transform:translateX(-50%) translateY(8px);
   transition:opacity .3s ease;
 }
+/* Below-tray mode — slides out from tray bottom edge */
+.toast.tray-mode{
+  top:156px; /* 60px header + ~96px expanded tray */
+  transform:translateX(-50%) translateY(-44px); /* starts inside tray area, invisible */
+}
+.toast.tray-mode.visible{
+  transform:translateX(-50%) translateY(0);
+}
+.toast.tray-mode.hiding{
+  transform:translateX(-50%) translateY(0);
+}
 /* ── Result tray (morphs down from header after generation) ── */
 .result-tray{
   position:absolute;
@@ -1263,6 +1274,12 @@ function handleCreate(e) {
   clearInterval(hintTimer);
   dismissBottomToast();
   if (trayCollapsed) expandTray(); // expand back before adding new card
+  // Position creating pill below tray if tray already exists, else at header
+  if (resultTray.classList.contains('visible')) {
+    toast.classList.add('tray-mode');
+  } else {
+    toast.classList.remove('tray-mode');
+  }
   showToast();
   startGeneration(prompt);
 }
@@ -1314,7 +1331,7 @@ function addToTray(src) {
         // Switch to persistent prompt state — label stays until user edits
         chat.classList.remove('generating');
         chat.classList.add('prompt-set');
-        setTimeout(() => showBottomToast(), 600);
+        if (S.genCount === 1) setTimeout(() => showBottomToast(), 600);
       }, 1100);
     };
   }, 450);
@@ -1472,7 +1489,7 @@ function dismissToast() {
   if (toastTimer) clearTimeout(toastTimer);
   toast.classList.add('hiding');
   toast.classList.remove('visible');
-  setTimeout(() => toast.classList.remove('hiding'), 350);
+  setTimeout(() => toast.classList.remove('hiding', 'tray-mode'), 350);
 }
 
 // ── Edit screen ───────────────────────────────────────────────────
