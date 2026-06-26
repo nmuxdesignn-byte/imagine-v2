@@ -447,14 +447,14 @@ html,body{
   transition:max-height 400ms cubic-bezier(0.25,0.46,0.45,0.94);
 }
 
-/* ── Tray collapsed: springs from 60→96 so pill tab pops out from below ── */
+/* ── Tray collapsed: springs 60→96, reveals pill tab area from below ── */
+/* background stays white — SVG is white fill, phone bg is white, no transparent flash */
 .result-tray.tray-collapsed{
   max-height:96px;
   overflow:hidden;
-  background:transparent!important;
   box-shadow:none!important;
   border-bottom:none!important;
-  transition:max-height 400ms cubic-bezier(0.34,1.56,0.64,1);
+  transition:max-height 360ms cubic-bezier(0.34,1.1,0.64,1);
 }
 
 /* ── SVG funnel background (custom shape with diagonal sides) ── */
@@ -501,6 +501,18 @@ html,body{
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
 }
 .rt-pill-chev{flex-shrink:0;}
+
+/* ── Pill text wiggle: fires after pill settles ── */
+@keyframes txt-wiggle{
+  0%,100%{transform:rotate(0deg)}
+  25%    {transform:rotate(-2.5deg)}
+  75%    {transform:rotate(2.5deg)}
+}
+.rt-pill-txt.wiggle{
+  display:inline-block;
+  animation:txt-wiggle .4s ease-in-out;
+  transform-origin:center center;
+}
 
 /* ── image card (transform/opacity/transition managed inline per-card) ── */
 .rt-img{
@@ -1278,15 +1290,21 @@ function handleCreate(e) {
   // needed here since the user just hit Create and the chatbox is closing
   if (trayCollapsed) {
     trayCollapsed = false;
+    // Fade out pill + SVG, then open expanded tray on top
     rtPill.classList.remove('visible');
-    rtBgShape.classList.remove('visible');
-    resultTray.classList.remove('tray-collapsed', 'tray-shrinking');
-    // Snap cards back instantly — no transition so no glitch window
-    resultTray.querySelectorAll('.rt-img').forEach(card => {
-      card.style.transition = 'none';
-      card.style.transform  = 'translateY(0) rotate(0deg) scale(1)';
-      card.style.opacity    = '1';
-    });
+    rtBgShape.style.transition = 'opacity 180ms ease';
+    rtBgShape.style.opacity    = '0';
+    setTimeout(() => {
+      rtBgShape.style.transition = '';
+      rtBgShape.style.opacity    = '';
+      rtBgShape.classList.remove('visible');
+      resultTray.classList.remove('tray-collapsed', 'tray-shrinking');
+      resultTray.querySelectorAll('.rt-img').forEach(card => {
+        card.style.transition = 'none';
+        card.style.transform  = 'translateY(0) rotate(0deg) scale(1)';
+        card.style.opacity    = '1';
+      });
+    }, 180);
   }
   // Position creating pill below tray if tray already exists, else at header
   if (resultTray.classList.contains('visible')) {
@@ -1381,7 +1399,7 @@ function collapseTray() {
   const cards = Array.from(resultTray.querySelectorAll('.rt-img'));
   if (!cards.length) return;
 
-  // Read all positions BEFORE any DOM change — prevents forced-reflow mid-animation
+  // Snapshot positions before touching the DOM
   const trayRect = resultTray.getBoundingClientRect();
   const trayCx   = trayRect.width / 2;
   const dxArr    = cards.map(card => {
@@ -1389,36 +1407,62 @@ function collapseTray() {
     return trayCx - 24 - (r.left - trayRect.left + 40);
   });
 
-  // Phase 1 — cards converge to center + scale, NO fade yet, NO height change
+  // Kill any in-flight transitions so nothing jerks
+  cards.forEach(c => { c.style.transition = 'none'; });
   void resultTray.offsetHeight;
+
+  // ── Phase 1 (rAF, 320ms) ─────────────────────────────────────────────────
+  // Cards converge to center + scale down. Non-lead cards fade during convergence.
+  // Lead card stays fully visible — hold it there so user sees the collision.
   requestAnimationFrame(() => {
     cards.forEach((card, i) => {
-      card.style.transition = 'transform 340ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 260ms ease';
+      card.style.transition = `transform 320ms cubic-bezier(0.25,0.46,0.45,0.94)${i > 0 ? ', opacity 240ms ease' : ''}`;
       card.style.transform  = `translateX(${dxArr[i]}px) scale(0.55)`;
-      if (i > 0) card.style.opacity = '0'; // non-lead fades during convergence
+      if (i > 0) card.style.opacity = '0';
     });
   });
 
-  // Phase 2 (460ms) — hold is over: tray height shrinks AND lead card fades together
+  // ── Phase 2 (360ms, 380ms duration) ──────────────────────────────────────
+  // Hold is done. Now tray height shrinks AND cards slide down simultaneously.
+  // Cards "fall" toward the bottom as the frame compresses around them.
   setTimeout(() => {
     resultTray.classList.add('tray-shrinking');
-    void resultTray.offsetHeight;
-    cards[0].style.transition = 'opacity 360ms ease';
-    cards[0].style.opacity    = '0';
-  }, 460);
+    void resultTray.offsetHeight; // commit height start value
+    cards.forEach((card, i) => {
+      card.style.transition = `transform 380ms cubic-bezier(0.3,0,0.5,1), opacity 300ms ease`;
+      card.style.transform  = `translateX(${dxArr[i]}px) translateY(52px) scale(0.35)`;
+      card.style.opacity    = '0';
+    });
+  }, 360);
 
-  // Phase 3 (840ms) — height done: funnel morphs in, springs 60→96
+  // ── Phase 3 (720ms) ───────────────────────────────────────────────────────
+  // Tray is at 60px. SVG fades in over the white background — no flash because
+  // tray stays white throughout (see .tray-collapsed CSS).
   setTimeout(() => {
-    resultTray.classList.remove('tray-shrinking');
-    resultTray.classList.add('tray-collapsed');
-    rtBgShape.classList.add('visible');
     const img = cards[0].querySelector('img');
     if (img?.src) rtPillImg.src = img.src;
     rtPillTxt.textContent = `${cards.length} image${cards.length !== 1 ? 's' : ''} created`;
-  }, 840);
+    rtBgShape.classList.add('visible');
+  }, 720);
 
-  // Phase 4 (980ms) — thumbnail + text rise from the curved tab
-  setTimeout(() => rtPill.classList.add('visible'), 980);
+  // ── Phase 4 (800ms) ───────────────────────────────────────────────────────
+  // Tray-shrinking is done. Swap to tray-collapsed: height springs 60→96,
+  // revealing the pill tab area from below — the "tongue morphing out".
+  setTimeout(() => {
+    resultTray.classList.remove('tray-shrinking');
+    resultTray.classList.add('tray-collapsed');
+  }, 800);
+
+  // ── Phase 5 (920ms) ───────────────────────────────────────────────────────
+  // Pill (thumbnail + text) rises from the curved tab.
+  setTimeout(() => {
+    rtPill.classList.add('visible');
+    // Text wiggles after pill settles (~380ms for the spring transition)
+    setTimeout(() => {
+      rtPillTxt.classList.add('wiggle');
+      setTimeout(() => rtPillTxt.classList.remove('wiggle'), 450);
+    }, 380);
+  }, 920);
 }
 
 function expandTray() {
