@@ -282,8 +282,9 @@ html,body{
   font-family:"Greed",sans-serif;
   font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
   padding:8px 12px 0 0;
+  caret-color:#000409;
 }
-.chat-tx::placeholder{color:var(--c1)}
+.chat-tx::placeholder{color:#CCCDCE}
 
 /* Dice */
 .chat-dice{
@@ -754,7 +755,7 @@ html,body{
 
       <div class="chat-tx-area" id="chatTxArea">
         <textarea class="chat-tx" id="chatTx" rows="3"
-          placeholder="Describe your look…"
+          placeholder="Describe what you want"
           oninput="onTxInput()"></textarea>
       </div>
 
@@ -1093,11 +1094,9 @@ function expandPrompt() {
   chat.classList.remove('prompt-set');
   chatWrap.classList.add('expanded');
   clearInterval(hintTimer);
-  // Restore last prompt, or pick a random one
-  if (!chatTx.value) {
-    chatTx.value = S.lastPrompt || PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
-    S.promptText = chatTx.value;
-  }
+  // Open empty — placeholder "Describe what you want" shows
+  chatTx.value = '';
+  S.promptText = '';
   setTimeout(() => chatTx.focus(), 80);
 }
 
