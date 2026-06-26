@@ -417,6 +417,44 @@ html,body{
   opacity:1;
 }
 .result-tray::-webkit-scrollbar{display:none;}
+
+/* ── Tray collapsed state ── */
+.result-tray.tray-collapsed{
+  max-height:56px;
+  overflow-x:hidden;
+  transition:max-height .45s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+
+/* ── Collapsed pill (thumbnail + count + chevron) ── */
+.rt-pill{
+  position:absolute;
+  top:50%;left:24px;
+  transform:translateY(-50%);
+  display:flex;align-items:center;gap:8px;
+  opacity:0;pointer-events:none;
+  white-space:nowrap;
+}
+.rt-pill.visible{
+  opacity:1;pointer-events:auto;
+  transition:opacity .3s ease;
+}
+.rt-pill-img-wrap{
+  width:36px;height:36px;border-radius:6px;
+  overflow:hidden;flex-shrink:0;background:#f0f0f0;
+  transform:scale(0.6);
+  transition:transform .4s cubic-bezier(0.34,1.1,0.64,1);
+}
+.rt-pill.visible .rt-pill-img-wrap{transform:scale(1);}
+.rt-pill-img{width:100%;height:100%;object-fit:cover;display:block;}
+.rt-pill-txt{
+  font-size:14px;font-weight:420;line-height:16px;color:var(--c0);
+  font-feature-settings:"ss01"1,"ss02"1,"ss06"1;
+  opacity:0;transition:opacity .25s ease;
+}
+.rt-pill.visible .rt-pill-txt{opacity:1;transition:opacity .25s ease .2s;}
+.rt-pill-chev{flex-shrink:0;transition:transform .3s ease;}
+.rt-pill.visible .rt-pill-chev{transform:rotate(0deg);}
+
 /* ── image card (transform/opacity/transition managed inline per-card) ── */
 .rt-img{
   position:relative;
@@ -807,7 +845,17 @@ html,body{
   </div>
 
   <!-- ── Result tray (morphs from header, cards prepended per generation) ── -->
-  <div class="result-tray" id="resultTray"></div>
+  <div class="result-tray" id="resultTray">
+    <div class="rt-pill" id="rtPill" onclick="expandTray()">
+      <div class="rt-pill-img-wrap">
+        <img class="rt-pill-img" id="rtPillImg" src="" alt="">
+      </div>
+      <span class="rt-pill-txt" id="rtPillTxt"></span>
+      <svg class="rt-pill-chev" width="16" height="16" viewBox="0 0 16 16" fill="none">
+        <path d="M4 6l4 4 4-4" stroke="#000409" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </div>
+  </div>
 
   <!-- ── Bottom toast (appears after image is revealed) ──────── -->
   <div class="bottom-toast" id="bottomToast">
@@ -969,6 +1017,9 @@ const chatTx       = $('chatTx');
 const chatGenLabel = $('chatGenLabel');
 const toast        = $('toast');
 const resultTray   = $('resultTray');
+const rtPill       = $('rtPill');
+const rtPillImg    = $('rtPillImg');
+const rtPillTxt    = $('rtPillTxt');
 const bottomToast  = $('bottomToast');
 const btTxt        = $('btTxt');
 const btProgress   = $('btProgress');
@@ -1165,6 +1216,7 @@ function handleCreate(e) {
   S.promptText = '';
   clearInterval(hintTimer);
   dismissBottomToast();
+  trayCollapsed = false;
   showToast();
   startGeneration(prompt);
 }
@@ -1233,9 +1285,89 @@ function showResultTray(src) {
 }
 
 function hideResultTray() {
-  resultTray.classList.remove('visible');
+  resultTray.classList.remove('visible','tray-collapsed');
+  rtPill.classList.remove('visible');
   dismissBottomToast();
-  setTimeout(() => { resultTray.innerHTML = ''; }, 600);
+  setTimeout(() => {
+    resultTray.querySelectorAll('.rt-img').forEach(c => c.remove());
+  }, 600);
+}
+
+// ── Tray collapse / expand on scroll ─────────────────────────────
+let trayCollapsed = false;
+
+function collapseTray() {
+  if (trayCollapsed) return;
+  trayCollapsed = true;
+
+  const cards = Array.from(resultTray.querySelectorAll('.rt-img'));
+  if (!cards.length) return;
+
+  const trayRect  = resultTray.getBoundingClientRect();
+  const trayCx    = trayRect.width / 2; // center of tray (no scroll offset needed)
+
+  // Phase 1 (0ms): all cards converge toward center, non-lead fade out
+  cards.forEach((card, i) => {
+    const rect  = card.getBoundingClientRect();
+    const cardCx = rect.left - trayRect.left + 40; // 40 = half of 80px
+    const dx     = trayCx - 24 - cardCx;           // 24 = left padding
+    card.style.transition = 'transform .38s cubic-bezier(0.25,0.46,0.45,0.94), opacity .3s ease';
+    card.style.transform  = `translateX(${dx}px)`;
+    if (i > 0) card.style.opacity = '0';
+  });
+
+  // Phase 2 (320ms): shrink tray height
+  setTimeout(() => {
+    resultTray.classList.add('tray-collapsed');
+  }, 320);
+
+  // Phase 3 (380ms): lead card scales down toward pill thumbnail spot
+  setTimeout(() => {
+    const lead = cards[0];
+    lead.style.transition = 'transform .38s cubic-bezier(0.25,0.46,0.45,0.94), opacity .3s ease';
+    // Pill thumb is at left:24 inside tray; lead card center currently near tray center
+    // scale down to ~0.45 to match 36px thumb
+    lead.style.transform = (lead.style.transform || '') + ' scale(0.45)';
+    lead.style.opacity   = '0';
+  }, 380);
+
+  // Phase 4 (560ms): morph pill in — thumb scales up from small, text fades after
+  setTimeout(() => {
+    const img = cards[0].querySelector('img');
+    if (img?.src) rtPillImg.src = img.src;
+    rtPillTxt.textContent = `${cards.length} image${cards.length !== 1 ? 's' : ''} created`;
+    rtPill.classList.add('visible');
+  }, 560);
+}
+
+function expandTray() {
+  if (!trayCollapsed) return;
+  trayCollapsed = false;
+
+  // Step 1: pill fades out
+  rtPill.classList.remove('visible');
+
+  // Step 2 (200ms): tray expands + cards restore
+  setTimeout(() => {
+    resultTray.classList.remove('tray-collapsed');
+    const cards = Array.from(resultTray.querySelectorAll('.rt-img'));
+    cards.forEach(card => {
+      card.style.transition = 'transform .5s cubic-bezier(0.34,1.1,0.64,1), opacity .35s ease';
+      card.style.transform  = 'translateY(0) rotate(0deg) scale(1)';
+      card.style.opacity    = '1';
+    });
+  }, 200);
+}
+
+function initScrollCollapse() {
+  let lastY = 0;
+  mainScroll.addEventListener('scroll', () => {
+    if (!resultTray.classList.contains('visible')) return;
+    if (trayCollapsed) return;
+    const y = mainScroll.scrollTop;
+    if (y > lastY + 4) collapseTray();
+    lastY = y;
+  }, { passive: true });
 }
 
 const BT_DURATION = 4000; // progress bar duration before auto-dismiss
@@ -1338,6 +1470,7 @@ document.addEventListener('click', e => {
 // ── Init ──────────────────────────────────────────────────────────
 buildGallery();
 startHintCycle();
+initScrollCollapse();
 
 </script>
 </body>
