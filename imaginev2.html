@@ -1266,7 +1266,19 @@ function handleCreate(e) {
   S.promptText = '';
   clearInterval(hintTimer);
   dismissBottomToast();
-  if (trayCollapsed) expandTray(); // expand back before adding new card
+  // If tray is collapsed, immediately reset to open state — no animation
+  // needed here since the user just hit Create and the chatbox is closing
+  if (trayCollapsed) {
+    trayCollapsed = false;
+    rtPill.classList.remove('visible');
+    rtBgShape.classList.remove('visible');
+    resultTray.classList.remove('tray-collapsed');
+    resultTray.querySelectorAll('.rt-img').forEach(card => {
+      card.style.transition = 'transform .4s cubic-bezier(0.34,1.1,0.64,1), opacity .3s ease';
+      card.style.transform  = 'translateY(0) rotate(0deg) scale(1)';
+      card.style.opacity    = '1';
+    });
+  }
   // Position creating pill below tray if tray already exists, else at header
   if (resultTray.classList.contains('visible')) {
     toast.classList.add('tray-mode');
