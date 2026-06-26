@@ -431,14 +431,14 @@ html,body{
 
 /* ── Tray: height-only shrink phase (cards still fading) ── */
 .result-tray.tray-shrinking{
-  max-height:60px;
+  max-height:44px;
   overflow:hidden;
   transition:max-height .42s cubic-bezier(0.25,0.46,0.45,0.94);
 }
 
 /* ── Tray: fully collapsed — rect bg gone, SVG shape takes over ── */
 .result-tray.tray-collapsed{
-  max-height:60px;
+  max-height:44px;
   overflow:visible;
   background:transparent!important;
   box-shadow:none!important;
@@ -449,7 +449,7 @@ html,body{
 .rt-bg-shape{
   position:absolute;
   top:0;left:0;
-  width:100%;height:96px;
+  width:100%;height:80px;
   pointer-events:none;
   opacity:0;
   z-index:1;
@@ -464,7 +464,7 @@ html,body{
 .rt-pill{
   position:absolute;
   left:50%;
-  top:64px; /* 60px strip + 4px center offset into 36px pill tab */
+  top:48px; /* 44px strip + 4px center offset into 36px pill tab */
   transform:translateX(-50%) translateY(5px);
   display:flex;align-items:center;gap:8px;
   cursor:pointer;
@@ -883,8 +883,8 @@ html,body{
   <div class="result-tray" id="resultTray">
     <!-- Custom funnel-shape background for collapsed state -->
     <div class="rt-bg-shape" id="rtBgShape" aria-hidden="true">
-      <svg width="100%" height="96" viewBox="0 0 390 96" fill="none" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
-        <path d="M0 0H390V60H308.081C304.487 60 301.334 62.3963 300.373 65.8589L294.441 87.2119C292.999 92.4057 288.269 96 282.879 96H107.121C101.731 96 97.0014 92.4057 95.5586 87.2119L89.6274 65.8589C88.6656 62.3963 85.5129 60 81.9193 60H0V0Z" fill="white"/>
+      <svg width="100%" height="80" viewBox="0 0 390 80" fill="none" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M0 0H390V44H308.081C304.487 44 301.334 46.3963 300.373 49.8589L294.441 71.2119C292.999 76.4057 288.269 80 282.879 80H107.121C101.731 80 97.0014 76.4057 95.5586 71.2119L89.6274 49.8589C88.6656 46.3963 85.5129 44 81.9193 44H0V0Z" fill="white"/>
       </svg>
     </div>
     <div class="rt-pill" id="rtPill" onclick="expandTray()">
