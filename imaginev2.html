@@ -440,21 +440,21 @@ html,body{
 }
 .result-tray::-webkit-scrollbar{display:none;}
 
-/* ── Tray shrinking phase — overflow: visible so cards animate freely outside bounds ── */
+/* ── Tray shrinking phase: height + card scale use same easing so they stay proportional ── */
 .result-tray.tray-shrinking{
   max-height:60px;
-  overflow:visible;
-  transition:max-height .42s cubic-bezier(0.25,0.46,0.45,0.94);
+  overflow:hidden;
+  transition:max-height 400ms cubic-bezier(0.25,0.46,0.45,0.94);
 }
 
-/* ── Tray collapsed — springs from 60→96 so pill tab pops out from below ── */
+/* ── Tray collapsed: springs from 60→96 so pill tab pops out from below ── */
 .result-tray.tray-collapsed{
   max-height:96px;
   overflow:hidden;
   background:transparent!important;
   box-shadow:none!important;
   border-bottom:none!important;
-  transition:max-height .4s cubic-bezier(0.34,1.56,0.64,1);
+  transition:max-height 400ms cubic-bezier(0.34,1.56,0.64,1);
 }
 
 /* ── SVG funnel background (custom shape with diagonal sides) ── */
@@ -1281,8 +1281,9 @@ function handleCreate(e) {
     rtPill.classList.remove('visible');
     rtBgShape.classList.remove('visible');
     resultTray.classList.remove('tray-collapsed', 'tray-shrinking');
+    // Snap cards back instantly — no transition so no glitch window
     resultTray.querySelectorAll('.rt-img').forEach(card => {
-      card.style.transition = 'transform .4s cubic-bezier(0.34,1.1,0.64,1), opacity .3s ease';
+      card.style.transition = 'none';
       card.style.transform  = 'translateY(0) rotate(0deg) scale(1)';
       card.style.opacity    = '1';
     });
@@ -1384,32 +1385,35 @@ function collapseTray() {
   const trayCx   = trayRect.width / 2;
   const dxByCard = new Map();
 
-  // Phase 1 (0ms): tray height shrinks + cards converge to center + scale to thumbnail
-  // overflow:visible on tray-shrinking means cards are NOT clipped by the shrinking frame
+  // ── Phase 1 (0–400ms) ──────────────────────────────────────────────────────
+  // Tray height: 100→60px   } identical easing + duration keeps cards proportional
+  // Cards: converge + scale } to shrinking frame at every frame — no overflow/clip
+  // scale 0.55 → 80×0.55=44px fills 60px strip minus 8px top/bottom padding exactly
   resultTray.classList.add('tray-shrinking');
 
   cards.forEach((card, i) => {
     const rect   = card.getBoundingClientRect();
-    const cardCx = rect.left - trayRect.left + 40; // 40 = half card width
-    const dx     = trayCx - 24 - cardCx;           // shift to center
+    const cardCx = rect.left - trayRect.left + 40;
+    const dx     = trayCx - 24 - cardCx;
     dxByCard.set(card, dx);
-    card.style.transition = 'transform .38s cubic-bezier(0.25,0.46,0.45,0.94), opacity .3s ease';
-    card.style.transform  = `translateX(${dx}px) scale(0.5)`;
+    card.style.transition = 'transform 400ms cubic-bezier(0.25,0.46,0.45,0.94), opacity 320ms ease';
+    card.style.transform  = `translateX(${dx}px) scale(0.55)`;
     if (i > 0) card.style.opacity = '0';
   });
 
-  // Phase 2 (320ms): converged bundle slides LEFT off screen, lead card fades
+  // ── Phase 2 (380ms) ────────────────────────────────────────────────────────
+  // All cards exit LEFT — disappear at the screen's left edge (natural curtain)
   setTimeout(() => {
     cards.forEach((card, i) => {
       const dx = dxByCard.get(card) ?? 0;
-      card.style.transition = 'transform .32s cubic-bezier(0.4,0,1,1), opacity .26s ease';
-      card.style.transform  = `translateX(${dx - 320}px) scale(0.5)`;
+      card.style.transition = 'transform 280ms cubic-bezier(0.4,0,1,1), opacity 220ms ease';
+      card.style.transform  = `translateX(${dx - 380}px) scale(0.55)`;
       if (i === 0) card.style.opacity = '0';
     });
-  }, 320);
+  }, 380);
 
-  // Phase 3 (660ms): cards fully gone → remove shrinking, add collapsed
-  // Height springs 60→96 so the pill tab area expands out from the bottom
+  // ── Phase 3 (680ms) ────────────────────────────────────────────────────────
+  // Swap shrinking→collapsed: height springs 60→96, pill tab opens from below
   setTimeout(() => {
     resultTray.classList.remove('tray-shrinking');
     resultTray.classList.add('tray-collapsed');
@@ -1418,7 +1422,7 @@ function collapseTray() {
     if (img?.src) rtPillImg.src = img.src;
     rtPillTxt.textContent = `${cards.length} image${cards.length !== 1 ? 's' : ''} created`;
     setTimeout(() => rtPill.classList.add('visible'), 100);
-  }, 660);
+  }, 680);
 }
 
 function expandTray() {
