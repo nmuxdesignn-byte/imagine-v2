@@ -350,6 +350,12 @@ html,body{
   transform:translateY(0);
   pointer-events:auto;
 }
+/* Collapse: banner slides back in fast, no delay */
+.chat-wrap.chat-exiting .chat-disclaimer{
+  transform:translateY(-100%);
+  transition:transform .28s cubic-bezier(0.32,0.72,0,1) !important;
+  pointer-events:none;
+}
 /* Text fades in after banner has fully arrived */
 .chat-disclaimer .cd-txt{
   opacity:0;
@@ -361,6 +367,11 @@ html,body{
 .chat-wrap.expanded .chat-disclaimer .cd-txt{
   opacity:1;
   transition:opacity .28s ease .88s;
+}
+/* Collapse: text snaps out immediately */
+.chat-wrap.chat-exiting .chat-disclaimer .cd-txt{
+  opacity:0 !important;
+  transition:opacity .1s ease !important;
 }
 
 /* ── Toast pill (top of screen, appears on Create) ───────── */
@@ -1161,19 +1172,23 @@ function expandPrompt() {
 function collapsePrompt() {
   S.chatOpen = false;
   chatTx.blur();
-  // Step 1: fade out dice + reset
-  chat.classList.add('collapsing');
-  // Step 2: after fade (~220ms), collapse height + wrap
+  // Step 1: slide banner back under immediately
+  chatWrap.classList.add('chat-exiting');
+  // Step 2: fade out dice + reset after banner starts moving
+  setTimeout(() => {
+    chat.classList.add('collapsing');
+  }, 140);
+  // Step 3: collapse height + wrap after dice/reset have faded
   setTimeout(() => {
     chat.classList.remove('expanded', 'has-refs', 'collapsing');
-    chatWrap.classList.remove('expanded');
+    chatWrap.classList.remove('expanded', 'chat-exiting');
     if (S.lastPrompt) {
       chatGenLabel.textContent = S.lastPrompt;
       chat.classList.add('prompt-set');
     } else {
       startHintCycle();
     }
-  }, 260);
+  }, 360);
 }
 
 function onTxInput() {
