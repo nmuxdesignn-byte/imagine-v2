@@ -205,6 +205,10 @@ html,body{
 .chat.generating .chat-hint{opacity:0!important;pointer-events:none}
 .chat.generating .chat-add{opacity:0;pointer-events:none!important}
 .chat.generating{pointer-events:none}
+/* Persistent prompt state: label stays visible, interactive */
+.chat.prompt-set .chat-gen-label{opacity:1}
+.chat.prompt-set .chat-hint{opacity:0!important;pointer-events:none}
+.chat.prompt-set .chat-add{opacity:0;pointer-events:none!important}
 
 /* Hint */
 .chat-hint{
@@ -1016,6 +1020,7 @@ function handleCardClick(e) {
   if (!S.chatOpen) {
     S.chatOpen = true;
     chat.classList.add('expanded');
+    chat.classList.remove('prompt-set');
     chatWrap.classList.add('expanded');
     clearInterval(hintTimer);
   }
@@ -1044,13 +1049,13 @@ function handleChatAdd(e) {
 function expandPrompt() {
   S.chatOpen = true;
   chat.classList.add('expanded');
+  chat.classList.remove('prompt-set');
   chatWrap.classList.add('expanded');
   clearInterval(hintTimer);
-  // Auto-fill with a prompt if empty
+  // Restore last prompt, or pick a random one
   if (!chatTx.value) {
-    const idx = Math.floor(Math.random() * PROMPTS.length);
-    chatTx.value = PROMPTS[idx];
-    S.promptText = PROMPTS[idx];
+    chatTx.value = S.lastPrompt || PROMPTS[Math.floor(Math.random() * PROMPTS.length)];
+    S.promptText = chatTx.value;
   }
   setTimeout(() => chatTx.focus(), 80);
 }
@@ -1060,7 +1065,12 @@ function collapsePrompt() {
   chat.classList.remove('expanded','has-refs');
   chatWrap.classList.remove('expanded');
   chatTx.blur();
-  startHintCycle();
+  if (S.lastPrompt) {
+    chatGenLabel.textContent = S.lastPrompt;
+    chat.classList.add('prompt-set');
+  } else {
+    startHintCycle();
+  }
 }
 
 function onTxInput() {
@@ -1096,7 +1106,7 @@ function handleCreate(e) {
   S.lastPrompt = prompt;
   S.chatOpen = false;
   chatGenLabel.textContent = prompt;
-  chat.classList.remove('expanded','has-refs');
+  chat.classList.remove('expanded','has-refs','prompt-set');
   chatWrap.classList.remove('expanded');
   chat.classList.add('generating');
   chatTx.value = '';
@@ -1151,9 +1161,9 @@ function addToTray(src) {
     img.onload = () => {
       setTimeout(() => {
         card.classList.add('revealed');
-        // Hint only restarts once the image is fully revealed
+        // Switch to persistent prompt state — label stays until user edits
         chat.classList.remove('generating');
-        startHintCycle();
+        chat.classList.add('prompt-set');
         setTimeout(() => showBottomToast(), 600);
       }, 1100);
     };
