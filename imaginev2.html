@@ -440,13 +440,21 @@ html,body{
 }
 .result-tray::-webkit-scrollbar{display:none;}
 
-/* ── Tray: fully collapsed — same height as expanded, only bg swaps ── */
+/* ── Tray shrinking phase — overflow: visible so cards animate freely outside bounds ── */
+.result-tray.tray-shrinking{
+  max-height:60px;
+  overflow:visible;
+  transition:max-height .42s cubic-bezier(0.25,0.46,0.45,0.94);
+}
+
+/* ── Tray collapsed — springs from 60→96 so pill tab pops out from below ── */
 .result-tray.tray-collapsed{
   max-height:96px;
   overflow:hidden;
   background:transparent!important;
   box-shadow:none!important;
   border-bottom:none!important;
+  transition:max-height .4s cubic-bezier(0.34,1.56,0.64,1);
 }
 
 /* ── SVG funnel background (custom shape with diagonal sides) ── */
@@ -1272,7 +1280,7 @@ function handleCreate(e) {
     trayCollapsed = false;
     rtPill.classList.remove('visible');
     rtBgShape.classList.remove('visible');
-    resultTray.classList.remove('tray-collapsed');
+    resultTray.classList.remove('tray-collapsed', 'tray-shrinking');
     resultTray.querySelectorAll('.rt-img').forEach(card => {
       card.style.transition = 'transform .4s cubic-bezier(0.34,1.1,0.64,1), opacity .3s ease';
       card.style.transform  = 'translateY(0) rotate(0deg) scale(1)';
@@ -1353,7 +1361,7 @@ function showResultTray(src) {
 }
 
 function hideResultTray() {
-  resultTray.classList.remove('visible','tray-collapsed');
+  resultTray.classList.remove('visible','tray-collapsed','tray-shrinking');
   rtPill.classList.remove('visible');
   rtBgShape.classList.remove('visible');
   dismissBottomToast();
@@ -1374,54 +1382,63 @@ function collapseTray() {
 
   const trayRect = resultTray.getBoundingClientRect();
   const trayCx   = trayRect.width / 2;
+  const dxByCard = new Map();
 
-  // Phase 1 (0ms): all cards converge toward center, non-lead fade out
+  // Phase 1 (0ms): tray height shrinks + cards converge to center + scale to thumbnail
+  // overflow:visible on tray-shrinking means cards are NOT clipped by the shrinking frame
+  resultTray.classList.add('tray-shrinking');
+
   cards.forEach((card, i) => {
     const rect   = card.getBoundingClientRect();
     const cardCx = rect.left - trayRect.left + 40; // 40 = half card width
-    const dx     = trayCx - 24 - cardCx;           // 24 = left padding
-    card.style.transition = 'transform .42s cubic-bezier(0.34,1.05,0.64,1), opacity .28s ease';
-    card.style.transform  = `translateX(${dx}px)`;
+    const dx     = trayCx - 24 - cardCx;           // shift to center
+    dxByCard.set(card, dx);
+    card.style.transition = 'transform .38s cubic-bezier(0.25,0.46,0.45,0.94), opacity .3s ease';
+    card.style.transform  = `translateX(${dx}px) scale(0.5)`;
     if (i > 0) card.style.opacity = '0';
   });
 
-  // Phase 2 (300ms): lead card scale-down + fade (220ms → done at 520ms)
+  // Phase 2 (320ms): converged bundle slides LEFT off screen, lead card fades
   setTimeout(() => {
-    const lead = cards[0];
-    lead.style.transition = 'transform .3s cubic-bezier(0.25,0.46,0.45,0.94), opacity .22s ease';
-    lead.style.transform  = (lead.style.transform || '') + ' scale(0.4)';
-    lead.style.opacity    = '0';
-  }, 300);
+    cards.forEach((card, i) => {
+      const dx = dxByCard.get(card) ?? 0;
+      card.style.transition = 'transform .32s cubic-bezier(0.4,0,1,1), opacity .26s ease';
+      card.style.transform  = `translateX(${dx - 320}px) scale(0.5)`;
+      if (i === 0) card.style.opacity = '0';
+    });
+  }, 320);
 
-  // Phase 3 (540ms): cards gone → swap rect bg for SVG funnel shape
+  // Phase 3 (660ms): cards fully gone → remove shrinking, add collapsed
+  // Height springs 60→96 so the pill tab area expands out from the bottom
   setTimeout(() => {
+    resultTray.classList.remove('tray-shrinking');
     resultTray.classList.add('tray-collapsed');
     rtBgShape.classList.add('visible');
     const img = cards[0].querySelector('img');
     if (img?.src) rtPillImg.src = img.src;
     rtPillTxt.textContent = `${cards.length} image${cards.length !== 1 ? 's' : ''} created`;
-    setTimeout(() => rtPill.classList.add('visible'), 80);
-  }, 540);
+    setTimeout(() => rtPill.classList.add('visible'), 100);
+  }, 660);
 }
 
 function expandTray() {
   if (!trayCollapsed) return;
   trayCollapsed = false;
 
-  // Step 1: pill + shape fade out
+  // Pill + shape fade out
   rtPill.classList.remove('visible');
-  setTimeout(() => rtBgShape.classList.remove('visible'), 100);
+  setTimeout(() => rtBgShape.classList.remove('visible'), 80);
 
-  // Step 2 (220ms): restore rect bg + spring cards back
+  // Restore full tray + spring cards in from their off-screen-left position
   setTimeout(() => {
-    resultTray.classList.remove('tray-collapsed');
+    resultTray.classList.remove('tray-collapsed', 'tray-shrinking');
     const cards = Array.from(resultTray.querySelectorAll('.rt-img'));
     cards.forEach(card => {
-      card.style.transition = 'transform .5s cubic-bezier(0.34,1.1,0.64,1), opacity .32s ease';
+      card.style.transition = 'transform .52s cubic-bezier(0.34,1.1,0.64,1), opacity .34s ease';
       card.style.transform  = 'translateY(0) rotate(0deg) scale(1)';
       card.style.opacity    = '1';
     });
-  }, 220);
+  }, 200);
 }
 
 function initScrollCollapse() {
