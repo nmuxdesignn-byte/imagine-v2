@@ -1112,13 +1112,13 @@ function addToTray(src) {
   const img = document.createElement('img');
   card.appendChild(img);
 
-  // FLIP: existing cards are about to shift right 88px (80px + 8px gap).
-  // Counter that shift with translateX(88px) so they appear frozen,
-  // then animate back to translateX(0) = their new natural layout position.
+  // FLIP: after inserting the new card, existing cards shift 88px right in layout.
+  // Apply translateX(-88px) to freeze them at their current visual position,
+  // then animate to translateX(0) so they smoothly slide into the new slot.
   const existing = Array.from(resultTray.querySelectorAll('.rt-img'));
   existing.forEach(el => {
     el.style.transition = 'none';
-    el.style.transform = 'translateX(88px)';
+    el.style.transform = 'translateX(-88px)';
   });
 
   Object.assign(card.style, {
