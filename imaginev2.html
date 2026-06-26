@@ -502,23 +502,13 @@ html,body{
 }
 .rt-pill-chev{flex-shrink:0;}
 
-/* ── Pill text wiggle: fires after pill settles ── */
-@keyframes txt-wiggle{
-  0%,100%{transform:rotate(0deg)}
-  25%    {transform:rotate(-2.5deg)}
-  75%    {transform:rotate(2.5deg)}
-}
-.rt-pill-txt.wiggle{
-  display:inline-block;
-  animation:txt-wiggle .4s ease-in-out;
-  transform-origin:center center;
-}
 
 /* ── image card (transform/opacity/transition managed inline per-card) ── */
 .rt-img{
   position:relative;
   width:80px;height:80px;border-radius:8px;
   background:#f0f0f0;overflow:hidden;flex-shrink:0;
+  z-index:2; /* stay above SVG bg-shape (z-index:1) so they're visible when tab emerges */
 }
 /* ── skeleton overlay fades out to reveal image ── */
 .rt-img::after{
@@ -1399,21 +1389,21 @@ function collapseTray() {
   const cards = Array.from(resultTray.querySelectorAll('.rt-img'));
   if (!cards.length) return;
 
-  // Snapshot positions before touching the DOM
+  // Read positions BEFORE any DOM change
   const trayRect = resultTray.getBoundingClientRect();
   const trayCx   = trayRect.width / 2;
   const dxArr    = cards.map(card => {
-    const r = card.getBoundingClientRect();
-    return trayCx - 24 - (r.left - trayRect.left + 40);
+    const r   = card.getBoundingClientRect();
+    const cCx = r.left - trayRect.left + 40; // card center x within tray
+    return trayCx - cCx;                      // shift needed to reach tray center
   });
 
-  // Kill any in-flight transitions so nothing jerks
+  // Kill in-flight transitions for a clean start
   cards.forEach(c => { c.style.transition = 'none'; });
   void resultTray.offsetHeight;
 
-  // ── Phase 1 (rAF, 320ms) ─────────────────────────────────────────────────
-  // Cards converge to center + scale down. Non-lead cards fade during convergence.
-  // Lead card stays fully visible — hold it there so user sees the collision.
+  // ── Phase 1 (rAF → 320ms): cards converge to center + scale ──────────────
+  // Non-lead cards fade as they converge. Lead stays visible — user sees collision.
   requestAnimationFrame(() => {
     cards.forEach((card, i) => {
       card.style.transition = `transform 320ms cubic-bezier(0.25,0.46,0.45,0.94)${i > 0 ? ', opacity 240ms ease' : ''}`;
@@ -1422,47 +1412,35 @@ function collapseTray() {
     });
   });
 
-  // ── Phase 2 (360ms, 380ms duration) ──────────────────────────────────────
-  // Hold is done. Now tray height shrinks AND cards slide down simultaneously.
-  // Cards "fall" toward the bottom as the frame compresses around them.
+  // ── Phase 2 (340ms → 720ms): tray height shrinks while cards hold center ──
+  // Cards are z-index:2, SVG is z-index:1 — cards stay visible above the shape.
+  // scale(0.55) = 44px visual, fits exactly in the 44px content area of 60px strip.
   setTimeout(() => {
     resultTray.classList.add('tray-shrinking');
-    void resultTray.offsetHeight; // commit height start value
-    cards.forEach((card, i) => {
-      card.style.transition = `transform 380ms cubic-bezier(0.3,0,0.5,1), opacity 300ms ease`;
-      card.style.transform  = `translateX(${dxArr[i]}px) translateY(52px) scale(0.35)`;
-      card.style.opacity    = '0';
-    });
-  }, 360);
+  }, 340);
 
-  // ── Phase 3 (720ms) ───────────────────────────────────────────────────────
-  // Tray is at 60px. SVG fades in over the white background — no flash because
-  // tray stays white throughout (see .tray-collapsed CSS).
+  // ── Phase 3 (740ms): folder tab springs out from below ───────────────────
+  // Swap shrinking→collapsed: height 60→96 (spring), revealing pill tab area.
+  // SVG fades in behind the cards — no flash since tray background stays white.
   setTimeout(() => {
+    resultTray.classList.remove('tray-shrinking');
+    resultTray.classList.add('tray-collapsed');
     const img = cards[0].querySelector('img');
     if (img?.src) rtPillImg.src = img.src;
     rtPillTxt.textContent = `${cards.length} image${cards.length !== 1 ? 's' : ''} created`;
     rtBgShape.classList.add('visible');
-  }, 720);
+  }, 740);
 
-  // ── Phase 4 (800ms) ───────────────────────────────────────────────────────
-  // Tray-shrinking is done. Swap to tray-collapsed: height springs 60→96,
-  // revealing the pill tab area from below — the "tongue morphing out".
+  // ── Phase 4 (880ms): images disappear ────────────────────────────────────
   setTimeout(() => {
-    resultTray.classList.remove('tray-shrinking');
-    resultTray.classList.add('tray-collapsed');
-  }, 800);
+    cards.forEach(card => {
+      card.style.transition = 'opacity 260ms ease';
+      card.style.opacity    = '0';
+    });
+  }, 880);
 
-  // ── Phase 5 (920ms) ───────────────────────────────────────────────────────
-  // Pill (thumbnail + text) rises from the curved tab.
-  setTimeout(() => {
-    rtPill.classList.add('visible');
-    // Text wiggles after pill settles (~380ms for the spring transition)
-    setTimeout(() => {
-      rtPillTxt.classList.add('wiggle');
-      setTimeout(() => rtPillTxt.classList.remove('wiggle'), 450);
-    }, 380);
-  }, 920);
+  // ── Phase 5 (1020ms): thumbnail + text + count rise from folder tab ───────
+  setTimeout(() => rtPill.classList.add('visible'), 1020);
 }
 
 function expandTray() {
@@ -1489,9 +1467,9 @@ function initScrollCollapse() {
   let lastY = 0;
   mainScroll.addEventListener('scroll', () => {
     if (!resultTray.classList.contains('visible')) return;
-    if (trayCollapsed) return;
     const y = mainScroll.scrollTop;
-    if (y > lastY + 4) collapseTray();
+    if (!trayCollapsed && y > lastY + 4) collapseTray();
+    else if (trayCollapsed && y < lastY - 4) expandTray();
     lastY = y;
   }, { passive: true });
 }
